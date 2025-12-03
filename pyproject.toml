@@ -3,7 +3,7 @@ name = "nms"
 version = "0.1.0"
 description = "Microservices for NoMus"
 authors = [{ name = "Dimitrii Chrm", email = "im.chrm@gmail.com" }]
-license = { text = "MIT" }
+license = "MIT"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
@@ -11,11 +11,12 @@ dependencies = [
     "pydantic (>=2.12.5,<3.0.0)",
     "httpx (>=0.28.1,<0.29.0)",
     "uvicorn (>=0.38.0,<0.39.0)",
+    "python-dotenv (>=1.2.1,<2.0.0)",
 ]
 
 [tool.poetry]
 packages = [{ include = "nms", from = "src" }]
-package-mode = false
+package-mode = true
 
 [tool.poetry.group.dev.dependencies]
 ruff = "^0.14.7"
@@ -26,8 +27,9 @@ requires = ["poetry-core>=2.0.0,<3.0.0"]
 build-backend = "poetry.core.masonry.api"
 
 [project.scripts]
-# запуск: poetry run python -m nomus.main
-nomus = "nms.main:run"
+# запуск: poetry run python -m nms.main
+# nms = "nms.main:run"
+nms = "nms.main:run"
 
 [tool.poetry.scripts]
 # запуск как скрипт (не рекомендуется): poetry run start-bot

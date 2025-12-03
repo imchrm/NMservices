@@ -57,7 +57,7 @@ Official installation [guide](https://python-poetry.org/docs/#installation).
 4.  **Запустите сервис:**
     Для запуска веб-сервиса в режиме разработки (с автоматической перезагрузкой) выполните:
     ```bash
-    poetry run uvicorn src.nomus.main:app --reload
+    poetry run uvicorn nms.main:app --reload --app-dir src
     ```
     *(Путь `src.nomus.main:app` основан на структуре из `doc/sop.md`. Если точка входа отличается, скорректируйте команду)*
 
