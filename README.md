@@ -65,6 +65,36 @@ Official installation [guide](https://python-poetry.org/docs/#installation).
     После запуска откройте в браузере адрес http://127.0.0.1:8000/docs.
     Вы увидите интерфейс Swagger, где можно протестировать эндпоинты `/register` и `/create_order` напрямую, отправляя JSON-запросы.
 
+    Тест создания заказа (/create_order)
+
+    PowerShell:
+    ```powershell
+    $headers = @{ "X-API-Key" = "test_secret" }
+    $body = @{ user_id = 1234; tariff_code = "standard_300" } | ConvertTo-Json
+
+    Invoke-RestMethod -Uri "http://127.0.0.1:8000/create_order" `
+        -Method Post `
+        -Headers $headers `
+        -ContentType "application/json" `
+        -Body $body
+    ```
+    Curl:
+    ```shell
+    curl -X 'POST' \
+        'http://127.0.0.1:8000/register' \
+        -H 'accept: application/json' \
+        -H 'X-API-Key: your_secreat_key' \
+        -H 'Content-Type: application/json' \
+        -d '{
+        "phone_number": "+998901234567"
+        }'
+    ```
+    Тесты можно запустить с помощью команды:
+    ```bash
+    poetry run pytest
+    ```
+
+
 ## ➡️ Следующие шаги
 
 *   Реализация логики в слоях `Application` и `Infrastructure` согласно `sop.md`.
