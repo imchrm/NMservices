@@ -155,10 +155,24 @@ function Invoke-ApiRequest {
 
         if ($_.Exception.Response) {
             $statusCode = [int]$_.Exception.Response.StatusCode
-            $stream = $_.Exception.Response.GetResponseStream()
-            $reader = New-Object System.IO.StreamReader($stream)
-            $errorBody = $reader.ReadToEnd() | ConvertFrom-Json -ErrorAction SilentlyContinue
-            $reader.Close()
+
+            # Try to read error body - works with both old and new PowerShell versions
+            try {
+                # New PowerShell (Core) method
+                if ($_.ErrorDetails.Message) {
+                    $errorBody = $_.ErrorDetails.Message | ConvertFrom-Json -ErrorAction SilentlyContinue
+                }
+                # Old PowerShell method (fallback)
+                elseif ($_.Exception.Response.GetResponseStream) {
+                    $stream = $_.Exception.Response.GetResponseStream()
+                    $reader = New-Object System.IO.StreamReader($stream)
+                    $errorBody = $reader.ReadToEnd() | ConvertFrom-Json -ErrorAction SilentlyContinue
+                    $reader.Close()
+                }
+            }
+            catch {
+                # If reading body fails, just continue with null body
+            }
         }
 
         return @{
