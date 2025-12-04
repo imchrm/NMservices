@@ -1,12 +1,15 @@
 from fastapi.testclient import TestClient
-from nms.main import app as app
+from nms.main import app
+from nms.config import get_settings
+
+settings = get_settings()
 
 # Создаем тестового клиента. Он делает вид, что отправляет запросы по сети,
 # но на самом деле вызывает функции вашего приложения напрямую (это очень быстро).
 client = TestClient(app)
 
 # Правильный ключ (тот, который у вас в коде по умолчанию или в .env)
-VALID_API_KEY = "troxivasine23"
+VALID_API_KEY = settings.api_secret_key
 WRONG_API_KEY = "wrong_password"
 
 
