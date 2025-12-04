@@ -15,6 +15,7 @@ htmlcov/
 # Файлы настроек IDE и редакторов
 .idea/
 .vscode/
+.claude/
 *.sublime-project
 *.sublime-workspace
 .pylintrc
@@ -24,8 +25,9 @@ htmlcov/
 Thumbs.db
 
 # Файлы виртуального окружения
-*.env
-.env*
+.env
+.env.local
+.env.*.local
 
 # Зависимости и пакеты (обычно управляются requirements.txt или Pipfile)
 # Не нужно коммитить скачанные пакеты, только список зависимостей
