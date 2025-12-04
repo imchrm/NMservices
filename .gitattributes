@@ -1,0 +1,27 @@
+# Auto detect text files and perform LF normalization
+* text=auto
+
+# Explicitly set line endings for specific file types
+
+# Shell scripts must have LF line endings
+*.sh text eol=lf
+
+# PowerShell scripts can have CRLF
+*.ps1 text eol=crlf
+
+# Python files should use LF
+*.py text eol=lf
+
+# Markdown and documentation
+*.md text
+
+# Configuration files
+*.toml text
+*.yaml text
+*.yml text
+*.json text
+*.env text
+
+# Exclude from exports
+.gitattributes export-ignore
+.gitignore export-ignore
