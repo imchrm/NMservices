@@ -4,7 +4,8 @@
 # This script tests all API endpoints remotely using curl
 # Usage: ./test_api.sh [OPTIONS]
 
-set -e  # Exit on error
+# Don't use 'set -e' as we handle test failures explicitly
+# set -e  # Exit on error
 
 # Colors for output
 RED='\033[0;31m'
@@ -182,7 +183,12 @@ make_request() {
 
     curl_args+=("$url")
 
-    curl "${curl_args[@]}" 2>&1
+    # When verbose, redirect stderr to /dev/tty to show debug info separately
+    if [ "$VERBOSE" = true ]; then
+        curl "${curl_args[@]}" 2>/dev/tty
+    else
+        curl "${curl_args[@]}" 2>&1
+    fi
 }
 
 # Test 1: Health check (public endpoint)
@@ -190,7 +196,7 @@ test_health_check() {
     echo ""
     echo -e "${YELLOW}[1/6]${NC} Testing health check endpoint..."
 
-    response=$(make_request "GET" "/" "" "false")
+    response=$(make_request "GET" "/" "" "false") || true
     http_code=$(echo "$response" | tail -n 1)
     body=$(echo "$response" | head -n -1)
 
@@ -211,7 +217,7 @@ test_register_no_auth() {
     echo -e "${YELLOW}[2/6]${NC} Testing security - register without auth..."
 
     local data='{"phone_number": "+998900000000"}'
-    response=$(make_request "POST" "/register" "$data" "false")
+    response=$(make_request "POST" "/register" "$data" "false") || true
     http_code=$(echo "$response" | tail -n 1)
     body=$(echo "$response" | head -n -1)
 
@@ -235,7 +241,7 @@ test_register_wrong_auth() {
     local old_api_key="$API_KEY"
     API_KEY="wrong_password"
 
-    response=$(make_request "POST" "/register" "$data" "true")
+    response=$(make_request "POST" "/register" "$data" "true") || true
     http_code=$(echo "$response" | tail -n 1)
     body=$(echo "$response" | head -n -1)
 
@@ -258,7 +264,7 @@ test_register_success() {
     echo -e "${YELLOW}[4/6]${NC} Testing user registration (legacy endpoint)..."
 
     local data='{"phone_number": "+998901234567"}'
-    response=$(make_request "POST" "/register" "$data" "true")
+    response=$(make_request "POST" "/register" "$data" "true") || true
     http_code=$(echo "$response" | tail -n 1)
     body=$(echo "$response" | head -n -1)
 
@@ -280,7 +286,7 @@ test_register_validation() {
     echo -e "${YELLOW}[5/6]${NC} Testing validation - empty request body..."
 
     local data='{}'
-    response=$(make_request "POST" "/register" "$data" "true")
+    response=$(make_request "POST" "/register" "$data" "true") || true
     http_code=$(echo "$response" | tail -n 1)
     body=$(echo "$response" | head -n -1)
 
@@ -297,7 +303,7 @@ test_create_order() {
     echo -e "${YELLOW}[6/6]${NC} Testing order creation (legacy endpoint)..."
 
     local data='{"user_id": 101, "tariff_code": "standard_300"}'
-    response=$(make_request "POST" "/create_order" "$data" "true")
+    response=$(make_request "POST" "/create_order" "$data" "true") || true
     http_code=$(echo "$response" | tail -n 1)
     body=$(echo "$response" | head -n -1)
 

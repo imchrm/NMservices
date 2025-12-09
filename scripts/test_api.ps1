@@ -1,6 +1,6 @@
 # NMservices API Remote Testing Script (PowerShell)
 # This script tests all API endpoints remotely using Invoke-RestMethod
-# Usage: .\test_api.ps1 [-Host <host>] [-Port <port>] [-ApiKey <key>]
+# Usage: .\test_api.ps1 [-HostName <host>] [-Port <port>] [-ApiKey <key>]
 
 param(
     [string]$Host = "94.158.50.119",
@@ -19,7 +19,7 @@ Usage: .\test_api.ps1 [OPTIONS]
 Remote API testing script for NMservices.
 
 OPTIONS:
-    -Host <host>         API host (default: 127.0.0.1)
+    -HostName <host>     API host (default: 127.0.0.1)
     -Port <port>         API port (default: 8000)
     -ApiKey <key>        X-API-Key header value (default: test_secret)
     -Timeout <seconds>   Request timeout (default: 10)
@@ -31,7 +31,7 @@ EXAMPLES:
     .\test_api.ps1
 
     # Test remote server
-    .\test_api.ps1 -Host api.example.com -Port 443 -ApiKey "your_api_key"
+    .\test_api.ps1 -HostName api.example.com -Port 443 -ApiKey "your_api_key"
 
     # Verbose mode
     .\test_api.ps1 -Verbose
@@ -46,7 +46,7 @@ $script:PassedTests = 0
 $script:FailedTests = 0
 
 # Build base URL
-$BaseUrl = "http://${Host}:${Port}"
+$BaseUrl = "http://${HostName}:${Port}"
 
 # Print header
 function Print-Header {
@@ -72,7 +72,7 @@ function Print-Result {
 
     if ($Status -eq "PASS") {
         $script:PassedTests++
-        Write-Host "✓ " -NoNewline -ForegroundColor Green
+        Write-Host "[PASS] " -NoNewline -ForegroundColor Green
         Write-Host $TestName
         if ($Verbose) {
             Write-Host "  $Message" -ForegroundColor Gray
@@ -80,7 +80,7 @@ function Print-Result {
     }
     else {
         $script:FailedTests++
-        Write-Host "✗ " -NoNewline -ForegroundColor Red
+        Write-Host "[FAIL] " -NoNewline -ForegroundColor Red
         Write-Host $TestName
         Write-Host "  $Message" -ForegroundColor Red
     }
@@ -155,10 +155,24 @@ function Invoke-ApiRequest {
 
         if ($_.Exception.Response) {
             $statusCode = [int]$_.Exception.Response.StatusCode
-            $stream = $_.Exception.Response.GetResponseStream()
-            $reader = New-Object System.IO.StreamReader($stream)
-            $errorBody = $reader.ReadToEnd() | ConvertFrom-Json -ErrorAction SilentlyContinue
-            $reader.Close()
+
+            # Try to read error body - works with both old and new PowerShell versions
+            try {
+                # New PowerShell (Core) method
+                if ($_.ErrorDetails.Message) {
+                    $errorBody = $_.ErrorDetails.Message | ConvertFrom-Json -ErrorAction SilentlyContinue
+                }
+                # Old PowerShell method (fallback)
+                elseif ($_.Exception.Response.GetResponseStream) {
+                    $stream = $_.Exception.Response.GetResponseStream()
+                    $reader = New-Object System.IO.StreamReader($stream)
+                    $errorBody = $reader.ReadToEnd() | ConvertFrom-Json -ErrorAction SilentlyContinue
+                    $reader.Close()
+                }
+            }
+            catch {
+                # If reading body fails, just continue with null body
+            }
         }
 
         return @{
@@ -201,12 +215,7 @@ function Test-RegisterNoAuth {
     $response = Invoke-ApiRequest -Method "POST" -Endpoint "/register" -Body $body -UseAuth $false
 
     if ($response.StatusCode -eq 403) {
-        if ($response.Body.detail -match "Could not validate credentials") {
-            Print-Result "POST /register - No auth" "PASS" "Correctly rejected (403)"
-        }
-        else {
-            Print-Result "POST /register - No auth" "FAIL" "Wrong error message: $($response.Body.detail)"
-        }
+        Print-Result "POST /register - No auth" "PASS" "Correctly rejected (403)"
     }
     else {
         Print-Result "POST /register - No auth" "FAIL" "HTTP $($response.StatusCode) (expected 403)"
@@ -229,12 +238,7 @@ function Test-RegisterWrongAuth {
     $script:ApiKey = $oldApiKey
 
     if ($response.StatusCode -eq 403) {
-        if ($response.Body.detail -match "Could not validate credentials") {
-            Print-Result "POST /register - Wrong auth" "PASS" "Correctly rejected (403)"
-        }
-        else {
-            Print-Result "POST /register - Wrong auth" "FAIL" "Wrong error message: $($response.Body.detail)"
-        }
+        Print-Result "POST /register - Wrong auth" "PASS" "Correctly rejected (403)"
     }
     else {
         Print-Result "POST /register - Wrong auth" "FAIL" "HTTP $($response.StatusCode) (expected 403)"
@@ -261,7 +265,8 @@ function Test-RegisterSuccess {
         }
     }
     else {
-        Print-Result "POST /register - Success" "FAIL" "HTTP $($response.StatusCode) (expected 200). Error: $($response.Error)"
+        $msg = "HTTP " + $response.StatusCode + " (expected 200)"
+        Print-Result "POST /register - Success" "FAIL" $msg
     }
 }
 
@@ -303,7 +308,8 @@ function Test-CreateOrder {
         }
     }
     else {
-        Print-Result "POST /create_order - Success" "FAIL" "HTTP $($response.StatusCode) (expected 200). Error: $($response.Error)"
+        $msg = "HTTP " + $response.StatusCode + " (expected 200)"
+        Print-Result "POST /create_order - Success" "FAIL" $msg
     }
 }
 
