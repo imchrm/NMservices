@@ -128,11 +128,11 @@ print_result() {
 
     if [ "$status" = "PASS" ]; then
         PASSED_TESTS=$((PASSED_TESTS + 1))
-        echo -e "${GREEN}✓${NC} ${test_name}"
+        echo -e "${GREEN}[PASS]${NC} ${test_name}"
         [ "$VERBOSE" = true ] && echo -e "  ${message}"
     else
         FAILED_TESTS=$((FAILED_TESTS + 1))
-        echo -e "${RED}✗${NC} ${test_name}"
+        echo -e "${RED}[FAIL]${NC} ${test_name}"
         echo -e "  ${RED}${message}${NC}"
     fi
 }
