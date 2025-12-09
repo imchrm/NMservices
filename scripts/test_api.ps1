@@ -3,9 +3,9 @@
 # Usage: .\test_api.ps1 [-Host <host>] [-Port <port>] [-ApiKey <key>]
 
 param(
-    [string]$Host = "127.0.0.1",
-    [int]$Port = 8000,
-    [string]$ApiKey = "test_secret",
+    [string]$Host = "94.158.50.119",
+    [int]$Port = 9800,
+    [string]$ApiKey = "troxivasine23",
     [int]$Timeout = 10,
     [switch]$Verbose,
     [switch]$Help
@@ -125,11 +125,11 @@ function Invoke-ApiRequest {
 
     try {
         $params = @{
-            Uri                = $Uri
-            Method             = $Method
-            Headers            = $Headers
-            TimeoutSec         = $Timeout
-            UseBasicParsing    = $true
+            Uri             = $Uri
+            Method          = $Method
+            Headers         = $Headers
+            TimeoutSec      = $Timeout
+            UseBasicParsing = $true
         }
 
         if ($Body) {
