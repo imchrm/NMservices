@@ -28,6 +28,12 @@ class Settings(BaseSettings):
     # Environment
     environment: str = Field(default="development", alias="ENVIRONMENT")
 
+    # Database
+    database_url: str = Field(
+        default="postgresql+asyncpg://postgres:postgres@localhost:5432/nomus",
+        alias="DATABASE_URL",
+    )
+
 
 @lru_cache
 def get_settings() -> Settings:

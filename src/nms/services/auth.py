@@ -1,6 +1,8 @@
 """Authentication and user registration services."""
 
-import random
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
+from nms.models.db_models import User
 
 
 class AuthService:
@@ -21,30 +23,46 @@ class AuthService:
         return True
 
     @staticmethod
-    def save_user(phone: str) -> int:
+    async def save_user(phone: str, db: AsyncSession) -> int:
         """
         Save user to database.
 
         Args:
             phone: User's phone number
+            db: Database session
 
         Returns:
-            Generated user ID
+            User ID from database
         """
-        fake_id = random.randint(1000, 9999)
-        print(f"[STUB-DB] User {phone} saved with ID {fake_id}")
-        return fake_id
+        # Check if user already exists
+        result = await db.execute(select(User).where(User.phone_number == phone))
+        existing_user = result.scalar_one_or_none()
 
-    def register_user(self, phone: str) -> int:
+        if existing_user:
+            user_id = existing_user.id
+            print(f"[DB] User {phone} already exists with ID {existing_user.id}")
+            return user_id
+
+        # Create new user
+        new_user = User(phone_number=phone)
+        db.add(new_user)
+        await db.commit()
+        await db.refresh(new_user)
+
+        print(f"[DB] User {phone} saved with ID {new_user.id}")
+        return new_user.id
+
+    async def register_user(self, phone: str, db: AsyncSession) -> int:
         """
         Register new user with phone verification.
 
         Args:
             phone: User's phone number
+            db: Database session
 
         Returns:
             Created user ID
         """
-        self.send_sms(phone)
-        user_id = self.save_user(phone)
+        AuthService.send_sms(phone)
+        user_id = await AuthService.save_user(phone, db)
         return user_id
