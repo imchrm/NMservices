@@ -312,6 +312,225 @@ sudo -u postgres psql -d nmservices_db
 2. Убедитесь, что правила сохранены: `netfilter-persistent save`
 3. Проверьте настройки хостинг-провайдера (облачный файрвол, security groups)
 
+## Пограничные условия и их преодоление (локальная разработка)
+
+### 1. Ошибка "Peer authentication failed"
+
+**Проблема:** При попытке подключения через `psql -U postgres -d postgres` возникает ошибка:
+```
+psql: error: connection to server on socket "/var/run/postgresql/.s.PGSQL.5432" failed: FATAL:  Peer authentication failed for user "postgres"
+```
+
+**Причина:** PostgreSQL по умолчанию использует `peer` аутентификацию для локальных подключений. Она проверяет соответствие имени пользователя Linux и пользователя БД. Если вы работаете под пользователем `dm`, а пытаетесь подключиться как `postgres` - доступ будет запрещен.
+
+**Решение 1 (временное, для разработки):** Используйте `sudo` для переключения на пользователя postgres:
+```bash
+sudo -u postgres psql
+```
+
+**Решение 2 (постоянное):** Измените метод аутентификации на парольный:
+
+1. Откройте файл конфигурации:
+```bash
+sudo nano /etc/postgresql/14/main/pg_hba.conf
+```
+
+2. Найдите строки:
+```conf
+local   all             postgres                                peer
+local   all             all                                     peer
+```
+
+3. Измените `peer` на `md5`:
+```conf
+local   all             postgres                                md5
+local   all             all                                     md5
+```
+
+4. Сохраните файл (Ctrl+O, Enter, Ctrl+X)
+
+5. Установите пароль для пользователя postgres:
+```bash
+sudo -u postgres psql
+```
+
+В консоли psql:
+```sql
+ALTER USER postgres WITH PASSWORD 'postgres';
+\q
+```
+
+6. Перезапустите PostgreSQL:
+```bash
+sudo systemctl restart postgresql
+```
+
+7. Проверьте подключение с паролем:
+```bash
+psql -U postgres -d postgres -h localhost
+```
+
+**Важно:** Флаг `-h localhost` заставляет использовать TCP/IP соединение вместо Unix socket, что требует парольной аутентификации.
+
+### 2. База данных не существует
+
+**Проблема:** Тесты падают с ошибкой подключения к несуществующей базе `nomus`.
+
+**Причина:** База данных не была создана после установки PostgreSQL.
+
+**Решение:**
+
+1. Подключитесь к PostgreSQL:
+```bash
+sudo -u postgres psql
+```
+
+2. Создайте базу данных:
+```sql
+CREATE DATABASE nomus;
+```
+
+**⚠️ Важно:** Команда в SQL **обязательно** должна заканчиваться точкой с запятой `;`. Без неё команда считается незавершенной.
+
+3. Проверьте создание базы:
+```sql
+\l
+```
+
+Вы должны увидеть `nomus` в списке баз данных.
+
+4. Подключитесь к базе и создайте таблицы:
+```sql
+\c nomus
+```
+
+5. Выполните скрипт инициализации:
+```bash
+\i /полный/путь/к/проекту/scripts/init_db.sql
+```
+
+**Альтернатива:** Если возникают проблемы с правами доступа к файлу, выполните команды вручную:
+
+```sql
+CREATE TABLE IF NOT EXISTS users (
+    id SERIAL PRIMARY KEY,
+    phone_number VARCHAR(20) UNIQUE NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_users_phone_number ON users(phone_number);
+
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = CURRENT_TIMESTAMP;
+    RETURN NEW;
+END;
+$$ language 'plpgsql';
+
+DROP TRIGGER IF EXISTS update_users_updated_at ON users;
+CREATE TRIGGER update_users_updated_at
+    BEFORE UPDATE ON users
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
+```
+
+### 3. Отсутствует файл .env
+
+**Проблема:** Приложение использует настройки по умолчанию из кода, которые могут не соответствовать вашей локальной конфигурации.
+
+**Решение:**
+
+1. Создайте файл `.env` в корне проекта:
+```bash
+cp .env.example .env
+```
+
+2. Проверьте и измените настройки подключения к БД:
+```env
+DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:5432/nomus
+```
+
+Формат строки подключения:
+```
+postgresql+asyncpg://ПОЛЬЗОВАТЕЛЬ:ПАРОЛЬ@ХОСТ:ПОРТ/ИМЯ_БАЗЫ
+```
+
+### 4. Команда SQL не выполняется
+
+**Проблема:** Вы пишете команду в `psql`, но ничего не происходит. Приглашение меняется на `postgres-#` или `postgres(#`.
+
+**Причина:** Команда не завершена. PostgreSQL ожидает точку с запятой `;`.
+
+**Пример неправильно:**
+```sql
+CREATE DATABASE nomus
+-- psql покажет: postgres-#
+-- и будет ждать продолжения команды
+```
+
+**Пример правильно:**
+```sql
+CREATE DATABASE nomus;
+-- psql выполнит команду и покажет: CREATE DATABASE
+```
+
+**Решение:** Всегда завершайте SQL команды точкой с запятой `;`.
+
+### 5. Permission denied при выполнении \i в psql
+
+**Проблема:** При попытке выполнить `\i /home/dm/scripts/init_db.sql` возникает ошибка "Permission denied".
+
+**Причина:** Пользователь `postgres` в Linux не имеет прав на чтение файлов в домашней директории другого пользователя (`/home/dm/`).
+
+**Решение 1:** Дайте права на чтение файла:
+```bash
+chmod +r /home/dm/dev/python/NMservices/scripts/init_db.sql
+```
+
+**Решение 2 (рекомендуется):** Скопируйте и вставьте содержимое скрипта непосредственно в консоль `psql`.
+
+**Решение 3:** Переместите скрипт в доступное место:
+```bash
+sudo cp scripts/init_db.sql /tmp/
+sudo -u postgres psql -d nomus -f /tmp/init_db.sql
+```
+
+### 6. Проверка успешной настройки
+
+После выполнения всех настроек проверьте:
+
+1. **PostgreSQL запущен:**
+```bash
+systemctl status postgresql
+```
+Должно быть: `Active: active`
+
+2. **База данных существует:**
+```bash
+sudo -u postgres psql -c "\l" | grep nomus
+```
+Должна быть строка с `nomus`
+
+3. **Таблицы созданы:**
+```bash
+sudo -u postgres psql -d nomus -c "\dt"
+```
+Должна быть таблица `users`
+
+4. **Парольная аутентификация работает:**
+```bash
+psql -U postgres -d nomus -h localhost
+```
+Должен запросить пароль и подключиться
+
+5. **Тесты проходят:**
+```bash
+poetry run pytest -v
+```
+Все 6 тестов должны пройти успешно
+
 ---
 
 **PostgreSQL успешно развернут и готов к использованию!**
