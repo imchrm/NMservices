@@ -1,13 +1,19 @@
 """Configuration module for NMservices."""
 
 from functools import lru_cache
-from pydantic import Field
+from pydantic import Field, BaseModel   
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+class LoggingConfig(BaseModel):
+    """Logging Configuration"""
+
+    level: str = "DEBUG"
+    format: str = "%(asctime)s - %(levelname)s - %(message)s"
 
 class Settings(BaseSettings):
     """Application settings."""
-
+    logging: LoggingConfig = LoggingConfig()
+    
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",

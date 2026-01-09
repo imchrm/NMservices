@@ -1,4 +1,5 @@
 """Main application entry point for NMservices."""
+import logging
 
 from fastapi import FastAPI, Depends, HTTPException, status
 from nms.config import get_settings
@@ -16,6 +17,16 @@ from nms.services.auth import AuthService
 from nms.services.order import OrderService
 
 settings = get_settings()
+
+def _setup_logging() -> logging.Logger:
+    log_config = settings.logging
+    logging.basicConfig(
+        level=getattr(logging, log_config.level),
+        format=log_config.format,
+    )
+    return logging.getLogger(__name__)
+
+log = _setup_logging()
 
 app = FastAPI(title=settings.app_title)
 
@@ -51,7 +62,13 @@ async def register_user_legacy(
             status="ok", message="User registered successfully", user_id=user_id
         )
     except Exception as e:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+        # We write the real error in the server logs
+        log.error("Error registering user: %s", e) 
+        # We send a general message to the user
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, 
+            detail="Internal server error. Please try again later." 
+        ) from e
 
 
 @app.post(

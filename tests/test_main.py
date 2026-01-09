@@ -10,6 +10,7 @@ client = TestClient(app)
 
 # Правильный ключ (тот, который у вас в коде по умолчанию или в .env)
 VALID_API_KEY = settings.api_secret_key
+print(f"DEBUG: VALID_API_KEY = {VALID_API_KEY}")
 WRONG_API_KEY = "wrong_password"
 
 
@@ -25,7 +26,7 @@ def test_read_root():
 
 def test_register_no_auth():
     """Попытка запроса без заголовка X-API-Key"""
-    response = client.post("/register", json={"phone_number": "+998900000000"})
+    response = client.post("/users/register", json={"phone_number": "+998900000000"})
     assert response.status_code == 403
     assert response.json() == {"detail": "Could not validate credentials"}
 
@@ -34,7 +35,7 @@ def test_register_wrong_auth():
     """Попытка запроса с неверным ключом"""
     headers = {"X-API-Key": WRONG_API_KEY}
     response = client.post(
-        "/register", json={"phone_number": "+998900000000"}, headers=headers
+        "/users/register", json={"phone_number": "+998900000000"}, headers=headers
     )
     assert response.status_code == 403
     assert response.json() == {"detail": "Could not validate credentials"}
@@ -48,7 +49,7 @@ def test_register_success():
     headers = {"X-API-Key": VALID_API_KEY}
     payload = {"phone_number": "+998901234567"}
 
-    response = client.post("/register", json=payload, headers=headers)
+    response = client.post("/users/register", json=payload, headers=headers)
 
     # Проверяем статус
     assert response.status_code == 200
