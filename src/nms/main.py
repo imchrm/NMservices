@@ -1,18 +1,19 @@
 """Main application entry point for NMservices."""
 
-from fastapi import FastAPI, Depends
-from .config import get_settings
-from .api.users import router as users_router
-from .api.orders import router as orders_router
-from .api.dependencies import get_api_key
-from .models import (
+from fastapi import FastAPI, Depends, HTTPException, status
+from nms.config import get_settings
+from nms.api.users import router as users_router
+from nms.api.orders import router as orders_router
+from nms.api.dependencies import get_api_key
+from nms.models import (
     UserRegistrationRequest,
     RegistrationResponse,
     OrderCreateRequest,
     OrderResponse,
 )
-from .services.auth import AuthService
-from .services.order import OrderService
+from nms.database import get_db
+from nms.services.auth import AuthService
+from nms.services.order import OrderService
 
 settings = get_settings()
 
@@ -40,12 +41,17 @@ async def root():
     dependencies=[Depends(get_api_key)],
     deprecated=True,
 )
-async def register_user_legacy(request: UserRegistrationRequest):
+async def register_user_legacy(
+    request: UserRegistrationRequest, db=Depends(get_db)
+):
     """Legacy endpoint - use /users/register instead."""
-    user_id = auth_service.register_user(request.phone_number)
-    return RegistrationResponse(
-        status="ok", message="User registered successfully", user_id=user_id
-    )
+    try:
+        user_id = await auth_service.register_user(request.phone_number, db)
+        return RegistrationResponse(
+            status="ok", message="User registered successfully", user_id=user_id
+        )
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
 
 @app.post(
