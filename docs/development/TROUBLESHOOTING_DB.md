@@ -1,36 +1,14 @@
-# Решение проблемы: Записи не сохраняются в PostgreSQL
+# Записи не сохраняются в PostgreSQL
 
 ## Симптомы
 
 При выполнении запроса регистрации:
 ```bash
 curl -X POST http://127.0.0.1:8000/users/register \
-  -H 'X-API-Key: troxivasine23' \
+  -H 'X-API-Key: your_api_key' \
   -H 'Content-Type: application/json' \
   -d '{"phone_number": "+998901234567"}'
 ```
-
-В логах сервера видно:
-```
-[STUB-SMS] Sending code to +998901234567...
-[DB] User +998901234567 saved with ID 1
-INFO: 127.0.0.1:48802 - "POST /users/register HTTP/1.1" 200 OK
-```
-
-Но при проверке в PostgreSQL:
-```sql
-SELECT * FROM users;
-```
-Таблица пуста, записей нет.
-
-## Причина проблемы
-
-**Таблица `users` была создана вручную через SQL**, а не через SQLAlchemy ORM.
-
-Структура таблицы может не совпадать с моделью в `src/nms/models/db_models.py`, что приводит к:
-- Проблемам с автоинкрементом ID
-- Несовпадению типов данных
-- Проблемам с транзакциями
 
 ## Диагностика
 
