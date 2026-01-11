@@ -173,7 +173,7 @@ async def main():
     print("=" * 60)
     print("\nТеперь попробуйте снова:")
     print("  curl -X POST http://127.0.0.1:8000/users/register \\")
-    print("    -H 'X-API-Key: troxivasine23' \\")
+    print("    -H 'X-API-Key: your_api_key' \\")
     print("    -H 'Content-Type: application/json' \\")
     print("    -d '{\"phone_number\": \"+998901234567\"}'")
     print()

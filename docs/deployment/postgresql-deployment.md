@@ -9,7 +9,7 @@
 ## Подключение к серверу
 
 ```bash
-ssh -p 2251 root@94.158.50.119
+ssh -p 2251 root@12.34.56.78
 ```
 
 ## 1. Обновление системы
@@ -193,12 +193,12 @@ DROP TABLE test_table;
 
 ```bash
 # Проверить доступность порта
-telnet 94.158.50.119 5432
+telnet 12.34.56.78 5432
 # или
-nc -zv 94.158.50.119 5432
+nc -zv 12.34.56.78 5432
 
 # Подключиться через psql (если установлен)
-psql -h 94.158.50.119 -p 5432 -U nmservices_user -d nmservices_db
+psql -h 12.34.56.78 -p 5432 -U nmservices_user -d nmservices_db
 ```
 
 ## 10. Параметры подключения для приложения
@@ -206,7 +206,7 @@ psql -h 94.158.50.119 -p 5432 -U nmservices_user -d nmservices_db
 Используйте следующие параметры в переменных окружения вашего приложения:
 
 ```env
-DB_HOST=94.158.50.119
+DB_HOST=12.34.56.78
 DB_PORT=5432
 DB_NAME=nmservices_db
 DB_USER=nmservices_user

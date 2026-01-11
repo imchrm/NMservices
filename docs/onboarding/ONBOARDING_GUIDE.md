@@ -173,7 +173,7 @@ chmod +x ./scripts/test_api.sh
 ./scripts/test_api.sh
 
 # С custom параметрами
-HOST=94.158.50.119 PORT=9800 API_KEY=troxivasine23 ./scripts/test_api.sh
+HOST=12.34.56.78 PORT=9800 API_KEY=your_api_key ./scripts/test_api.sh
 
 # Verbose режим
 ./scripts/test_api.sh -v
@@ -186,7 +186,7 @@ HOST=94.158.50.119 PORT=9800 API_KEY=troxivasine23 ./scripts/test_api.sh
 .\scripts\test_api.ps1
 
 # С custom параметрами
-.\scripts\test_api.ps1 -HostName 94.158.50.119 -Port 9800 -ApiKey "troxivasine23"
+.\scripts\test_api.ps1 -HostName 12.34.56.78 -Port 9800 -ApiKey "your_api_key"
 
 # Verbose режим
 .\scripts\test_api.ps1 -Verbose
