@@ -3,9 +3,9 @@
 # Usage: .\test_api.ps1 [-HostName <host>] [-Port <port>] [-ApiKey <key>]
 
 param(
-    [string]$HostName = "94.158.50.119",
+    [string]$HostName = "12.34.56.78",
     [int]$Port = 9800,
-    [string]$ApiKey = "troxivasine23",
+    [string]$ApiKey = "your_api_key",
     [int]$Timeout = 10,
     [switch]$Verbose,
     [switch]$Help

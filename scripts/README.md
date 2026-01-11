@@ -563,7 +563,7 @@ API_KEY=secret ./scripts/deploy.sh test -u username
 
 ```bash
 -u, --user USER     Remote username (обязательно)
--h, --host HOST     Remote host (default: 94.158.50.119)
+-h, --host HOST     Remote host (default: 12.34.56.78)
 -p, --port PORT     SSH port (default: 2251)
 -s, --service PORT  Service port (default: 9800)
 ```
@@ -572,7 +572,7 @@ API_KEY=secret ./scripts/deploy.sh test -u username
 
 ```bash
 REMOTE_USER=myuser
-REMOTE_HOST=94.158.50.119
+REMOTE_HOST=12.34.56.78
 REMOTE_PORT=2251
 SERVICE_PORT=9800
 API_KEY=your_api_key
