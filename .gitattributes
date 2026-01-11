@@ -13,7 +13,17 @@
 *.py text eol=lf
 
 # Markdown and documentation
-*.md text
+*.md text eol=lf
+
+# another files
+*.yml text eol=lf
+*.yaml text eol=lf
+*.json text eol=lf
+*.sql text eol=lf
+*.rst text eol=lf
+*.txt text eol=lf
+*.csv text eol=lf
+*.tsv text eol=lf
 
 # Configuration files
 *.toml text

@@ -2,10 +2,10 @@
 
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
-from ..models import UserRegistrationRequest, RegistrationResponse
-from ..services.auth import AuthService
-from ..database import get_db
-from .dependencies import get_api_key
+from nms.models import UserRegistrationRequest, RegistrationResponse
+from nms.services.auth import AuthService
+from nms.database import get_db
+from nms.api.dependencies import get_api_key
 
 router = APIRouter(prefix="/users", tags=["users"])
 auth_service = AuthService()
