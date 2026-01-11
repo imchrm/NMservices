@@ -80,7 +80,7 @@ poetry run python scripts/recreate_database.py
 
 ```bash
 curl -X POST http://127.0.0.1:8000/users/register \
-  -H 'X-API-Key: troxivasine23' \
+  -H 'X-API-Key: your_api_key' \
   -H 'Content-Type: application/json' \
   -d '{"phone_number": "+998901234567"}'
 ```
@@ -140,7 +140,7 @@ poetry run python -c "import asyncio; from nms.database import init_db; asyncio.
 2. **API работает:**
    ```bash
    curl -X POST http://127.0.0.1:8000/users/register \
-     -H 'X-API-Key: troxivasine23' \
+     -H 'X-API-Key: your_api_key' \
      -H 'Content-Type: application/json' \
      -d '{"phone_number": "+998901234567"}'
    ```
@@ -154,7 +154,7 @@ poetry run python -c "import asyncio; from nms.database import init_db; asyncio.
    ```bash
    # Повторный запрос должен вернуть тот же user_id
    curl -X POST http://127.0.0.1:8000/users/register \
-     -H 'X-API-Key: troxivasine23' \
+     -H 'X-API-Key: your_api_key' \
      -H 'Content-Type: application/json' \
      -d '{"phone_number": "+998901234567"}'
    ```
