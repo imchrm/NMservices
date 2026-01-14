@@ -1,8 +1,9 @@
 """Database ORM models."""
 
 from datetime import datetime
-from sqlalchemy import Column, String, DateTime
-from sqlalchemy.orm import Mapped, mapped_column
+from decimal import Decimal
+from sqlalchemy import Column, String, DateTime, Integer, ForeignKey, DECIMAL, Text
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from nms.database import Base
 
 
@@ -19,6 +20,32 @@ class User(Base):
         DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
     )
 
+    # Relationship
+    orders = relationship("Order", back_populates="user", cascade="all, delete-orphan")
+
     def __repr__(self) -> str:
         """String representation of User."""
         return f"<User(id={self.id}, phone={self.phone_number})>"
+
+
+class Order(Base):
+    """Order table model."""
+
+    __tablename__ = "orders"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    status = Column(String(50), nullable=False, default="pending", index=True)
+    total_amount = Column(DECIMAL(10, 2), nullable=True)
+    notes = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False, index=True)
+    updated_at = Column(
+        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
+    )
+
+    # Relationship
+    user = relationship("User", back_populates="orders")
+
+    def __repr__(self) -> str:
+        """String representation of Order."""
+        return f"<Order(id={self.id}, user_id={self.user_id}, status={self.status})>"
