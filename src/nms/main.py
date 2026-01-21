@@ -77,12 +77,29 @@ async def register_user_legacy(
     dependencies=[Depends(get_api_key)],
     deprecated=True,
 )
-async def create_order_legacy(request: OrderCreateRequest):
+async def create_order_legacy(
+    request: OrderCreateRequest, db=Depends(get_db)
+):
     """Legacy endpoint - use /orders instead."""
-    order_id = order_service.create_order(request.user_id, request.tariff_code)
-    return OrderResponse(
-        status="ok", order_id=order_id, message="Order created and payment processed"
-    )
+    try:
+        order_id = await order_service.create_order(
+            request.user_id, request.tariff_code, db
+        )
+        return OrderResponse(
+            status="ok", order_id=order_id, message="Order created and payment processed"
+        )
+    except ValueError as e:
+        log.error("Error creating order: %s", e)
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        ) from e
+    except Exception as e:
+        log.error("Error creating order: %s", e)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Internal server error. Please try again later."
+        ) from e
 
 
 def run():
