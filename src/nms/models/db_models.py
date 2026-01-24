@@ -1,7 +1,7 @@
 """Database ORM models."""
 
 from datetime import datetime
-from decimal import Decimal
+# from decimal import Decimal
 from sqlalchemy import Column, String, DateTime, Integer, ForeignKey, DECIMAL, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from nms.database import Base
@@ -35,7 +35,7 @@ class Order(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
-    status = Column(String(50), nullable=False, default="pending", index=True)
+    status: Mapped[str] = mapped_column(String(50), nullable=False, default="pending", index=True)
     total_amount = Column(DECIMAL(10, 2), nullable=True)
     notes = Column(Text, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False, index=True)

@@ -12,14 +12,21 @@
 """
 
 import asyncio
-import sys
+# import os
+# import sys
 from decimal import Decimal
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
-from sqlalchemy import text, select
+from sqlalchemy import select
+from sqlalchemy.exc import SQLAlchemyError
+
+# Добавляем путь к папке src, чтобы Python видел пакет nms
+# sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../src")))
 
 from nms.config import get_settings
 from nms.models.db_models import User, Order
 
+
+VALID_STATUSES = ["pending", "confirmed", "in_progress", "completed", "cancelled"]
 
 class OrderManager:
     """Менеджер для работы с заказами."""
@@ -66,10 +73,14 @@ class OrderManager:
         self,
         user_id: int,
         status: str = "pending",
-        total_amount: float = None,
-        notes: str = None
+        total_amount: float | None = None,
+        notes: str | None = None
     ):
         """Создать новый заказ."""
+        if status not in VALID_STATUSES:
+            print(f"❌ Ошибка: Недопустимый статус '{status}'")
+            return None
+
         async with self.async_session_maker() as session:
             try:
                 # Проверяем, что пользователь существует
@@ -96,13 +107,17 @@ class OrderManager:
                 print(f"✅ Заказ создан: ID={order.id}")
                 return order
 
-            except Exception as e:
+            except SQLAlchemyError as e:
                 print(f"❌ Ошибка при создании заказа: {e}")
                 await session.rollback()
                 return None
 
     async def update_order_status(self, order_id: int, new_status: str):
         """Обновить статус заказа."""
+        if new_status not in VALID_STATUSES:
+            print(f"❌ Ошибка: Недопустимый статус '{new_status}'")
+            return False
+
         async with self.async_session_maker() as session:
             try:
                 result = await session.execute(
@@ -121,7 +136,7 @@ class OrderManager:
                 print(f"✅ Статус заказа {order_id} изменен: {old_status} → {new_status}")
                 return True
 
-            except Exception as e:
+            except SQLAlchemyError as e:
                 print(f"❌ Ошибка при обновлении статуса: {e}")
                 await session.rollback()
                 return False
@@ -145,7 +160,7 @@ class OrderManager:
                 print(f"✅ Заказ {order_id} удален")
                 return True
 
-            except Exception as e:
+            except SQLAlchemyError as e:
                 print(f"❌ Ошибка при удалении заказа: {e}")
                 await session.rollback()
                 return False
@@ -264,7 +279,7 @@ async def main():
                     order_id = int(input("\nВведите ID заказа: ").strip())
                     new_status = input("Введите новый статус (pending/confirmed/in_progress/completed/cancelled): ").strip()
 
-                    if new_status not in ["pending", "confirmed", "in_progress", "completed", "cancelled"]:
+                    if new_status not in VALID_STATUSES:
                         print("❌ Некорректный статус!")
                         continue
 
