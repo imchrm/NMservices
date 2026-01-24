@@ -192,16 +192,38 @@ def print_header():
     print("=" * 60)
 
 
-def print_menu():
-    """Вывести меню."""
-    print("\n📋 МЕНЮ:")
-    print("  1 - Показать всех пользователей")
-    print("  2 - Показать всех пользователей с их заказами")
-    print("  3 - Показать все заказы")
-    print("  4 - Создать новый заказ")
-    print("  5 - Обновить статус заказа")
-    print("  6 - Удалить заказ по ID")
-    print("  0 - Выход")
+def print_main_menu():
+    """Вывести главное меню."""
+    print("\n📋 ГЛАВНОЕ МЕНЮ:")
+    print("1. Пользователи")
+    print("   a. показать всех")
+    print("   b. показать всех с заказами")
+    print("2. Заказы")
+    print("   a. показать все")
+    print("   b. создать новый")
+    print("   c. обновить")
+    print("   d. удалить по ID")
+    print("0. Выход")
+    print()
+
+
+def print_users_submenu():
+    """Вывести подменю пользователей."""
+    print("\n👥 ПОЛЬЗОВАТЕЛИ:")
+    print("   a. показать всех")
+    print("   b. показать всех с заказами")
+    print("0. вернуться")
+    print()
+
+
+def print_orders_submenu():
+    """Вывести подменю заказов."""
+    print("\n📦 ЗАКАЗЫ:")
+    print("   a. показать все")
+    print("   b. создать новый")
+    print("   c. обновить")
+    print("   d. удалить по ID")
+    print("0. вернуться")
     print()
 
 
@@ -270,6 +292,99 @@ def print_orders(orders):
     print("-" * 80)
 
 
+async def handle_users_menu(manager: OrderManager, subchoice: str = None):
+    """Обработать меню пользователей."""
+    if subchoice is None:
+        print_users_submenu()
+        subchoice = input("Выберите действие: ").strip().lower()
+
+    if subchoice == "0":
+        return
+    elif subchoice == "a":
+        users = await manager.list_users()
+        print_users(users)
+    elif subchoice == "b":
+        users_with_orders = await manager.list_users_with_orders()
+        print_users_with_orders(users_with_orders)
+    else:
+        print("❌ Неверный выбор!")
+
+
+async def handle_orders_menu(manager: OrderManager, subchoice: str = None):
+    """Обработать меню заказов."""
+    if subchoice is None:
+        print_orders_submenu()
+        subchoice = input("Выберите действие: ").strip().lower()
+
+    if subchoice == "0":
+        return
+    elif subchoice == "a":
+        orders = await manager.list_orders()
+        print_orders(orders)
+    elif subchoice == "b":
+        print("\n➕ СОЗДАНИЕ НОВОГО ЗАКАЗА")
+        users = await manager.list_users()
+        print_users(users)
+
+        if not users:
+            return
+
+        try:
+            user_id = int(input("\nВведите ID пользователя: ").strip())
+            status = input("Введите статус (pending/confirmed/in_progress/completed/cancelled) [pending]: ").strip() or "pending"
+            amount_input = input("Введите сумму заказа (или Enter для пропуска): ").strip()
+            total_amount = float(amount_input) if amount_input else None
+            notes = input("Введите примечания (или Enter для пропуска): ").strip() or None
+
+            await manager.create_order(user_id, status, total_amount, notes)
+
+        except ValueError:
+            print("❌ Ошибка: Некорректный ввод!")
+
+    elif subchoice == "c":
+        print("\n✏️  ОБНОВЛЕНИЕ СТАТУСА ЗАКАЗА")
+        orders = await manager.list_orders()
+        print_orders(orders)
+
+        if not orders:
+            return
+
+        try:
+            order_id = int(input("\nВведите ID заказа: ").strip())
+            new_status = input("Введите новый статус (pending/confirmed/in_progress/completed/cancelled): ").strip()
+
+            if new_status not in VALID_STATUSES:
+                print("❌ Некорректный статус!")
+                return
+
+            await manager.update_order_status(order_id, new_status)
+
+        except ValueError:
+            print("❌ Ошибка: Некорректный ввод!")
+
+    elif subchoice == "d":
+        print("\n🗑️  УДАЛЕНИЕ ЗАКАЗА")
+        orders = await manager.list_orders()
+        print_orders(orders)
+
+        if not orders:
+            return
+
+        try:
+            order_id = int(input("\nВведите ID заказа для удаления: ").strip())
+            confirm = input(f"Вы уверены, что хотите удалить заказ {order_id}? (yes/no): ").lower().strip()
+
+            if confirm == "yes":
+                await manager.delete_order(order_id)
+            else:
+                print("❌ Удаление отменено")
+
+        except ValueError:
+            print("❌ Ошибка: Некорректный ввод!")
+    else:
+        print("❌ Неверный выбор!")
+
+
 async def main():
     """Главная функция."""
     print_header()
@@ -278,85 +393,26 @@ async def main():
 
     try:
         while True:
-            print_menu()
-            choice = input("Выберите действие: ").strip()
+            print_main_menu()
+            choice = input("Выберите действие: ").strip().lower()
 
             if choice == "0":
                 print("\n👋 До свидания!")
                 break
 
+            # Обработка комбинированных команд (1a, 2b и т.д.)
+            elif len(choice) == 2 and choice[0] in ["1", "2"] and choice[1] in ["a", "b", "c", "d"]:
+                if choice[0] == "1":
+                    await handle_users_menu(manager, choice[1])
+                elif choice[0] == "2":
+                    await handle_orders_menu(manager, choice[1])
+
+            # Обработка главного меню
             elif choice == "1":
-                users = await manager.list_users()
-                print_users(users)
+                await handle_users_menu(manager)
 
             elif choice == "2":
-                users_with_orders = await manager.list_users_with_orders()
-                print_users_with_orders(users_with_orders)
-
-            elif choice == "3":
-                orders = await manager.list_orders()
-                print_orders(orders)
-
-            elif choice == "4":
-                print("\n➕ СОЗДАНИЕ НОВОГО ЗАКАЗА")
-                users = await manager.list_users()
-                print_users(users)
-
-                if not users:
-                    continue
-
-                try:
-                    user_id = int(input("\nВведите ID пользователя: ").strip())
-                    status = input("Введите статус (pending/confirmed/in_progress/completed/cancelled) [pending]: ").strip() or "pending"
-                    amount_input = input("Введите сумму заказа (или Enter для пропуска): ").strip()
-                    total_amount = float(amount_input) if amount_input else None
-                    notes = input("Введите примечания (или Enter для пропуска): ").strip() or None
-
-                    await manager.create_order(user_id, status, total_amount, notes)
-
-                except ValueError:
-                    print("❌ Ошибка: Некорректный ввод!")
-
-            elif choice == "5":
-                print("\n✏️  ОБНОВЛЕНИЕ СТАТУСА ЗАКАЗА")
-                orders = await manager.list_orders()
-                print_orders(orders)
-
-                if not orders:
-                    continue
-
-                try:
-                    order_id = int(input("\nВведите ID заказа: ").strip())
-                    new_status = input("Введите новый статус (pending/confirmed/in_progress/completed/cancelled): ").strip()
-
-                    if new_status not in VALID_STATUSES:
-                        print("❌ Некорректный статус!")
-                        continue
-
-                    await manager.update_order_status(order_id, new_status)
-
-                except ValueError:
-                    print("❌ Ошибка: Некорректный ввод!")
-
-            elif choice == "6":
-                print("\n🗑️  УДАЛЕНИЕ ЗАКАЗА")
-                orders = await manager.list_orders()
-                print_orders(orders)
-
-                if not orders:
-                    continue
-
-                try:
-                    order_id = int(input("\nВведите ID заказа для удаления: ").strip())
-                    confirm = input(f"Вы уверены, что хотите удалить заказ {order_id}? (yes/no): ").lower().strip()
-
-                    if confirm == "yes":
-                        await manager.delete_order(order_id)
-                    else:
-                        print("❌ Удаление отменено")
-
-                except ValueError:
-                    print("❌ Ошибка: Некорректный ввод!")
+                await handle_orders_menu(manager)
 
             else:
                 print("❌ Неверный выбор! Попробуйте снова.")
