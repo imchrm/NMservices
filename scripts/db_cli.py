@@ -70,6 +70,34 @@ class OrderManager:
 
             return users_with_orders
 
+    async def create_user(self, phone_number: str):
+        """Создать нового пользователя."""
+        async with self.async_session_maker() as session:
+            try:
+                # Проверяем, что пользователь не существует
+                result = await session.execute(
+                    select(User).where(User.phone_number == phone_number)
+                )
+                existing_user = result.scalar_one_or_none()
+
+                if existing_user:
+                    print(f"❌ Ошибка: Пользователь с номером {phone_number} уже существует (ID: {existing_user.id})!")
+                    return None
+
+                # Создаем пользователя
+                user = User(phone_number=phone_number)
+                session.add(user)
+                await session.commit()
+                await session.refresh(user)
+
+                print(f"✅ Пользователь создан: ID={user.id}, Телефон={user.phone_number}")
+                return user
+
+            except SQLAlchemyError as e:
+                print(f"❌ Ошибка при создании пользователя: {e}")
+                await session.rollback()
+                return None
+
     async def list_orders(self):
         """Получить список всех заказов."""
         async with self.async_session_maker() as session:
@@ -198,6 +226,7 @@ def print_main_menu():
     print("1. Пользователи")
     print("   a. показать всех")
     print("   b. показать всех с заказами")
+    print("   c. создать нового")
     print("2. Заказы")
     print("   a. показать все")
     print("   b. создать новый")
@@ -212,6 +241,7 @@ def print_users_submenu():
     print("\n👥 ПОЛЬЗОВАТЕЛИ:")
     print("   a. показать всех")
     print("   b. показать всех с заказами")
+    print("   c. создать нового")
     print("0. вернуться")
     print()
 
@@ -306,6 +336,19 @@ async def handle_users_menu(manager: OrderManager, subchoice: str = None):
     elif subchoice == "b":
         users_with_orders = await manager.list_users_with_orders()
         print_users_with_orders(users_with_orders)
+    elif subchoice == "c":
+        print("\n➕ СОЗДАНИЕ НОВОГО ПОЛЬЗОВАТЕЛЯ")
+        try:
+            phone_number = input("Введите номер телефона (например, +998901234567): ").strip()
+
+            if not phone_number:
+                print("❌ Ошибка: Номер телефона не может быть пустым!")
+                return
+
+            await manager.create_user(phone_number)
+
+        except Exception as e:
+            print(f"❌ Ошибка: {e}")
     else:
         print("❌ Неверный выбор!")
 
