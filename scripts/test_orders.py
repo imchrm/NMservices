@@ -51,6 +51,23 @@ class OrderManager:
             users = result.scalars().all()
             return users
 
+    async def list_users_with_orders(self):
+        """Получить список всех пользователей с их заказами."""
+        async with self.async_session_maker() as session:
+            result = await session.execute(select(User))
+            users = result.scalars().all()
+
+            # Загружаем заказы для каждого пользователя
+            users_with_orders = []
+            for user in users:
+                orders_result = await session.execute(
+                    select(Order).where(Order.user_id == user.id).order_by(Order.created_at.desc())
+                )
+                user_orders = orders_result.scalars().all()
+                users_with_orders.append((user, user_orders))
+
+            return users_with_orders
+
     async def list_orders(self):
         """Получить список всех заказов."""
         async with self.async_session_maker() as session:
@@ -177,10 +194,11 @@ def print_menu():
     """Вывести меню."""
     print("\n📋 МЕНЮ:")
     print("  1 - Показать всех пользователей")
-    print("  2 - Показать все заказы")
-    print("  3 - Создать новый заказ")
-    print("  4 - Обновить статус заказа")
-    print("  5 - Удалить заказ по ID")
+    print("  2 - Показать всех пользователей с их заказами")
+    print("  3 - Показать все заказы")
+    print("  4 - Создать новый заказ")
+    print("  5 - Обновить статус заказа")
+    print("  6 - Удалить заказ по ID")
     print("  0 - Выход")
     print()
 
@@ -201,6 +219,32 @@ def print_users(users):
         created = user.created_at.strftime("%Y-%m-%d %H:%M:%S")
         print(f"{user.id:<5} {user.phone_number:<20} {created:<20}")
     print("-" * 60)
+
+
+def print_users_with_orders(users_with_orders):
+    """Вывести список пользователей с их заказами."""
+    if not users_with_orders:
+        print("\n⚠️  Пользователей не найдено!")
+        print("Создайте пользователя через API или скрипт recreate_database.py")
+        return
+
+    print("\n" + "-" * 80)
+    print("ПОЛЬЗОВАТЕЛИ И ЗАКАЗЫ:")
+    print("-" * 80)
+    print(f"{'ID':<5} {'Телефон':<20} {'Дата создания':<20}")
+    print("-" * 80)
+
+    for user, orders in users_with_orders:
+        created = user.created_at.strftime("%Y-%m-%d %H:%M:%S")
+        print(f"{user.id:<5} {user.phone_number:<20} {created:<20}")
+
+        # Если у пользователя есть заказы, выводим их с отступом
+        if orders:
+            for order in orders:
+                amount = f"{order.total_amount}" if order.total_amount else "—"
+                print(f"  └─ ID: {order.id:<5} Статус: {order.status:<12} Сумма: {amount}")
+        # Если заказов нет, переходим к следующему пользователю без вывода
+    print("-" * 80)
 
 
 def print_orders(orders):
@@ -244,10 +288,14 @@ async def main():
                 print_users(users)
 
             elif choice == "2":
+                users_with_orders = await manager.list_users_with_orders()
+                print_users_with_orders(users_with_orders)
+
+            elif choice == "3":
                 orders = await manager.list_orders()
                 print_orders(orders)
 
-            elif choice == "3":
+            elif choice == "4":
                 print("\n➕ СОЗДАНИЕ НОВОГО ЗАКАЗА")
                 users = await manager.list_users()
                 print_users(users)
@@ -267,7 +315,7 @@ async def main():
                 except ValueError:
                     print("❌ Ошибка: Некорректный ввод!")
 
-            elif choice == "4":
+            elif choice == "5":
                 print("\n✏️  ОБНОВЛЕНИЕ СТАТУСА ЗАКАЗА")
                 orders = await manager.list_orders()
                 print_orders(orders)
@@ -288,7 +336,7 @@ async def main():
                 except ValueError:
                     print("❌ Ошибка: Некорректный ввод!")
 
-            elif choice == "5":
+            elif choice == "6":
                 print("\n🗑️  УДАЛЕНИЕ ЗАКАЗА")
                 orders = await manager.list_orders()
                 print_orders(orders)
