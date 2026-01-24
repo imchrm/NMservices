@@ -98,6 +98,47 @@ class OrderManager:
                 await session.rollback()
                 return None
 
+    async def get_user_by_id(self, user_id: int):
+        """Получить пользователя по ID."""
+        async with self.async_session_maker() as session:
+            result = await session.execute(
+                select(User).where(User.id == user_id)
+            )
+            return result.scalar_one_or_none()
+
+    async def delete_user(self, user_id: int):
+        """Удалить пользователя по ID."""
+        async with self.async_session_maker() as session:
+            try:
+                result = await session.execute(
+                    select(User).where(User.id == user_id)
+                )
+                user = result.scalar_one_or_none()
+
+                if not user:
+                    print(f"❌ Ошибка: Пользователь с ID {user_id} не найден!")
+                    return False
+
+                # Получаем количество заказов пользователя
+                orders_result = await session.execute(
+                    select(Order).where(Order.user_id == user_id)
+                )
+                orders_count = len(orders_result.scalars().all())
+
+                await session.delete(user)
+                await session.commit()
+
+                if orders_count > 0:
+                    print(f"✅ Пользователь {user_id} удален вместе с {orders_count} заказами")
+                else:
+                    print(f"✅ Пользователь {user_id} удален")
+                return True
+
+            except SQLAlchemyError as e:
+                print(f"❌ Ошибка при удалении пользователя: {e}")
+                await session.rollback()
+                return False
+
     async def list_orders(self):
         """Получить список всех заказов."""
         async with self.async_session_maker() as session:
@@ -227,6 +268,7 @@ def print_main_menu():
     print("   a. показать всех")
     print("   b. показать всех с заказами")
     print("   c. создать нового")
+    print("   d. удалить по ID")
     print("2. Заказы")
     print("   a. показать все")
     print("   b. создать новый")
@@ -242,6 +284,7 @@ def print_users_submenu():
     print("   a. показать всех")
     print("   b. показать всех с заказами")
     print("   c. создать нового")
+    print("   d. удалить по ID")
     print("0. вернуться")
     print()
 
@@ -347,6 +390,35 @@ async def handle_users_menu(manager: OrderManager, subchoice: str = None):
 
             await manager.create_user(phone_number)
 
+        except Exception as e:
+            print(f"❌ Ошибка: {e}")
+    elif subchoice == "d":
+        print("\n🗑️  УДАЛЕНИЕ ПОЛЬЗОВАТЕЛЯ")
+        users = await manager.list_users()
+        print_users(users)
+
+        if not users:
+            return
+
+        try:
+            user_id = int(input("\nВведите ID пользователя для удаления: ").strip())
+
+            # Получаем пользователя для подтверждения
+            user = await manager.get_user_by_id(user_id)
+
+            if not user:
+                print(f"❌ Пользователь с ID {user_id} не найден!")
+                return
+
+            confirm = input(f"Вы уверены, что хотите удалить пользователя: {user_id} с номером телефона: {user.phone_number}? (yes/no): ").lower().strip()
+
+            if confirm == "yes":
+                await manager.delete_user(user_id)
+            else:
+                print("❌ Удаление отменено")
+
+        except ValueError:
+            print("❌ Ошибка: Некорректный ввод!")
         except Exception as e:
             print(f"❌ Ошибка: {e}")
     else:
