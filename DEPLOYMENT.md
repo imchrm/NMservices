@@ -97,17 +97,35 @@ journalctl -u nms -f
 
 ## Endpoints
 
-### Legacy endpoint (deprecated)
+### Public API Endpoints
+
+#### Legacy endpoint (deprecated)
 ```bash
 POST /create_order
 ```
 
-### New endpoint (recommended)
+#### New endpoint (recommended)
 ```bash
 POST /orders
 ```
 
 Оба эндпоинта работают одинаково и теперь реально сохраняют данные в БД.
+
+### Admin API Endpoints
+
+Для удаленного управления базой данных доступны Admin API эндпоинты.
+Требуют аутентификации через заголовок `X-Admin-Key`.
+
+См. полную документацию в файле `ADMIN_API.md`.
+
+Основные эндпоинты:
+- `GET /admin/users` - список пользователей
+- `POST /admin/users` - создать пользователя
+- `DELETE /admin/users/{id}` - удалить пользователя
+- `GET /admin/orders` - список заказов
+- `PATCH /admin/orders/{id}` - обновить заказ
+- `DELETE /admin/orders/{id}` - удалить заказ
+- `GET /admin/stats` - статистика БД
 
 ## Troubleshooting
 
@@ -118,6 +136,17 @@ POST /orders
 Проверьте `.env` файл и `DATABASE_URL`:
 ```bash
 cat .env | grep DATABASE_URL
+```
+
+### Настройка Admin API
+Добавьте в `.env` файл:
+```bash
+ADMIN_SECRET_KEY=your_secure_admin_key_here
+```
+
+Проверить работу Admin API:
+```bash
+curl -H "X-Admin-Key: your_secure_admin_key_here" http://localhost:8000/admin/stats
 ```
 
 ### Заказ не появляется в таблице
