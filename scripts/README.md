@@ -8,6 +8,8 @@
 - `test_api.sh` - bash-скрипт для тестирования API (Linux/macOS)
 - `test_api.ps1` - PowerShell-скрипт для тестирования API (Windows)
 - `test_registration.py` - Python-скрипт для тестирования регистрации пользователей
+- `test_admin_api.py` - Python-скрипт для тестирования Admin API (полный функциональный тест)
+- `test_admin_api.sh` - bash-скрипт для тестирования Admin API (Linux/macOS)
 
 ### Работа с базой данных
 - `init_db.sql` - SQL-скрипт для инициализации БД (создание таблиц users и orders)
@@ -82,6 +84,41 @@ poetry run python scripts/test_registration.py
 ```
 
 См. документацию по сетевому тестированию: `docs/development/NETWORK_TESTING.md`
+
+### Тестирование Admin API
+
+#### Python-версия (полный функциональный тест)
+
+```bash
+# Запустить с параметрами по умолчанию (http://192.168.1.191:8000)
+poetry run python scripts/test_admin_api.py
+
+# Запустить на localhost
+poetry run python scripts/test_admin_api.py http://localhost:8000
+
+# Запустить с кастомным admin ключом
+poetry run python scripts/test_admin_api.py http://192.168.1.191:8000 your_admin_key
+```
+
+Тесты проверяют:
+- ✅ Создание/получение/удаление пользователей
+- ✅ Создание/получение/обновление/удаление заказов
+- ✅ Получение статистики БД
+- ✅ Фильтрацию заказов по статусу
+- ✅ CASCADE удаление (пользователь + его заказы)
+
+#### Bash-версия (Linux/macOS)
+
+```bash
+# Сделать скрипт исполняемым
+chmod +x scripts/test_admin_api.sh
+
+# Запустить с параметрами по умолчанию
+./scripts/test_admin_api.sh
+
+# Запустить с кастомными параметрами
+./scripts/test_admin_api.sh http://localhost:8000 your_admin_key
+```
 
 ### Тестирование API (Linux/macOS)
 
