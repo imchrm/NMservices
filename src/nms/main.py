@@ -2,9 +2,12 @@
 import logging
 
 from fastapi import FastAPI, Depends, HTTPException, status
+from fastapi.middleware.cors import CORSMiddleware
 from nms.config import get_settings
 from nms.api.users import router as users_router
 from nms.api.orders import router as orders_router
+from nms.api.admin.users import router as admin_users_router
+from nms.api.admin.orders import router as admin_orders_router, stats_router
 from nms.api.dependencies import get_api_key
 from nms.models import (
     UserRegistrationRequest,
@@ -30,9 +33,23 @@ log = _setup_logging()
 
 app = FastAPI(title=settings.app_title)
 
+# Add CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=settings.cors_origins,
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allow_headers=["*"],
+)
+
 # Include routers
 app.include_router(users_router)
 app.include_router(orders_router)
+
+# Include admin routers
+app.include_router(admin_users_router)
+app.include_router(admin_orders_router)
+app.include_router(stats_router)
 
 # Service instances for legacy endpoints
 auth_service = AuthService()

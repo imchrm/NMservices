@@ -24,6 +24,7 @@ class Settings(BaseSettings):
     # API Security
     api_secret_key: str = Field(default="test_secret", alias="API_SECRET_KEY")
     api_key_name: str = Field(default="X-API-Key")
+    admin_secret_key: str = Field(default="admin_secret", alias="ADMIN_SECRET_KEY")
 
     # Application
     app_title: str = Field(default="NoMus Backend API (PoC)")
@@ -38,6 +39,12 @@ class Settings(BaseSettings):
     database_url: str = Field(
         default="postgresql+asyncpg://postgres:postgres@localhost:5432/nomus",
         alias="DATABASE_URL",
+    )
+
+    # CORS (Cross-Origin Resource Sharing)
+    cors_origins: list[str] = Field(
+        default=["http://localhost:5173"],  # Vite dev server
+        alias="CORS_ORIGINS",
     )
 
 
