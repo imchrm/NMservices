@@ -1,7 +1,8 @@
 """Admin API endpoints for user management."""
 
 import logging
-from fastapi import APIRouter, Depends, HTTPException, status
+from typing import Literal
+from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
 from sqlalchemy.orm import selectinload
@@ -25,16 +26,26 @@ router = APIRouter(prefix="/admin/users", tags=["admin-users"])
 async def list_users(
     skip: int = 0,
     limit: int = 100,
+    sort_by: Literal["id", "phone_number", "created_at", "updated_at"] = Query(
+        default="id",
+        description="Field to sort by"
+    ),
+    order: Literal["asc", "desc"] = Query(
+        default="asc",
+        description="Sort order (ascending or descending)"
+    ),
     db: AsyncSession = Depends(get_db)
 ):
     """
-    Get list of all users.
-    
+    Get list of all users with sorting support.
+
     Args:
         skip: Number of records to skip
         limit: Maximum number of records to return
+        sort_by: Field to sort by (id, phone_number, created_at, updated_at)
+        order: Sort order (asc or desc)
         db: Database session
-    
+
     Returns:
         List of users with total count
     """
@@ -42,16 +53,32 @@ async def list_users(
         # Get total count
         count_result = await db.execute(select(func.count(User.id)))
         total = count_result.scalar_one()
-        
-        # Get users
+
+        # Map sort_by to actual column
+        sort_columns = {
+            "id": User.id,
+            "phone_number": User.phone_number,
+            "created_at": User.created_at,
+            "updated_at": User.updated_at,
+        }
+
+        sort_column = sort_columns[sort_by]
+
+        # Apply sort order
+        if order == "desc":
+            order_clause = sort_column.desc()
+        else:
+            order_clause = sort_column.asc()
+
+        # Get users with sorting
         result = await db.execute(
             select(User)
-            .order_by(User.id)
+            .order_by(order_clause)
             .offset(skip)
             .limit(limit)
         )
         users = result.scalars().all()
-        
+
         return AdminUserListResponse(
             users=[AdminUserResponse.model_validate(user) for user in users],
             total=total
