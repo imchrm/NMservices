@@ -20,8 +20,14 @@ Set `ADMIN_SECRET_KEY` in your `.env` file.
 
 #### List All Users
 ```bash
-GET /admin/users?skip=0&limit=100
+GET /admin/users?skip=0&limit=100&sort_by=created_at&order=desc
 ```
+
+**Query Parameters:**
+- `skip` (integer, default: 0) - Number of records to skip
+- `limit` (integer, default: 100) - Number of records to return
+- `sort_by` (string, default: "id") - Field to sort by: `id`, `phone_number`, `created_at`, `updated_at`
+- `order` (string, default: "asc") - Sort order: `asc` or `desc`
 
 Response:
 ```json
@@ -88,8 +94,15 @@ GET /admin/users/{user_id}/orders
 
 #### List All Orders
 ```bash
-GET /admin/orders?skip=0&limit=100&status_filter=pending
+GET /admin/orders?skip=0&limit=100&status_filter=pending&sort_by=created_at&order=desc
 ```
+
+**Query Parameters:**
+- `skip` (integer, default: 0) - Number of records to skip
+- `limit` (integer, default: 100) - Number of records to return
+- `status_filter` (string, optional) - Filter by status: `pending`, `completed`, etc.
+- `sort_by` (string, default: "created_at") - Field to sort by: `id`, `user_id`, `status`, `total_amount`, `created_at`, `updated_at`
+- `order` (string, default: "desc") - Sort order: `asc` or `desc`
 
 Response:
 ```json

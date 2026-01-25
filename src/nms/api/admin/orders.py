@@ -1,7 +1,8 @@
 """Admin API endpoints for order management."""
 
 import logging
-from fastapi import APIRouter, Depends, HTTPException, status
+from typing import Literal
+from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
 from sqlalchemy.orm import selectinload
@@ -27,24 +28,55 @@ router = APIRouter(prefix="/admin/orders", tags=["admin-orders"])
 async def list_orders(
     skip: int = 0,
     limit: int = 100,
-    status_filter: str = None,
+    status_filter: str = Query(
+        default=None,
+        description="Filter by order status (e.g., 'pending', 'completed')"
+    ),
+    sort_by: Literal["id", "user_id", "status", "total_amount", "created_at", "updated_at"] = Query(
+        default="created_at",
+        description="Field to sort by"
+    ),
+    order: Literal["asc", "desc"] = Query(
+        default="desc",
+        description="Sort order (ascending or descending)"
+    ),
     db: AsyncSession = Depends(get_db)
 ):
     """
-    Get list of all orders with optional status filter.
+    Get list of all orders with filtering and sorting support.
 
     Args:
         skip: Number of records to skip
         limit: Maximum number of records to return
         status_filter: Optional status filter (e.g., 'pending', 'completed')
+        sort_by: Field to sort by (id, user_id, status, total_amount, created_at, updated_at)
+        order: Sort order (asc or desc)
         db: Database session
 
     Returns:
         List of orders with total count
     """
     try:
-        # Build query
-        query = select(Order).order_by(Order.created_at.desc())
+        # Map sort_by to actual column
+        sort_columns = {
+            "id": Order.id,
+            "user_id": Order.user_id,
+            "status": Order.status,
+            "total_amount": Order.total_amount,
+            "created_at": Order.created_at,
+            "updated_at": Order.updated_at,
+        }
+
+        sort_column = sort_columns[sort_by]
+
+        # Apply sort order
+        if order == "desc":
+            order_clause = sort_column.desc()
+        else:
+            order_clause = sort_column.asc()
+
+        # Build query with sorting
+        query = select(Order).order_by(order_clause)
 
         if status_filter:
             query = query.where(Order.status == status_filter)
@@ -57,7 +89,7 @@ async def list_orders(
         count_result = await db.execute(count_query)
         total = count_result.scalar_one()
 
-        # Get orders
+        # Get orders with pagination
         result = await db.execute(query.offset(skip).limit(limit))
         orders = result.scalars().all()
 
