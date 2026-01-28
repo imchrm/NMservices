@@ -15,6 +15,7 @@ dependencies = [
     "python-dotenv (>=1.2.1,<2.0.0)",
     "asyncpg (>=0.29.0,<0.30.0)",
     "sqlalchemy[asyncio] (>=2.0.0,<3.0.0)",
+    "alembic (>=1.13.0,<2.0.0)",
 ]
 
 [tool.poetry]
@@ -24,7 +25,7 @@ package-mode = true
 
 [tool.poetry.group.dev.dependencies]
 ruff = "^0.14.7"
-pytest = "^9.0.1"
+pytest = "^8.2.0"
 pytest-asyncio = "^0.24.0"
 aiosqlite = "^0.20.0"
 
