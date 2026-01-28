@@ -152,12 +152,12 @@ async def test_insert():
     async with async_session_maker() as session:
         try:
             # Создаем тестового пользователя
-            test_user = User(phone_number="+998999999999")
+            test_user = User(phone_number="+998999999999", telegram_id=123456789)
             session.add(test_user)
             await session.commit()
             await session.refresh(test_user)
 
-            print(f"\n✅ Тестовый пользователь создан: ID={test_user.id}, phone={test_user.phone_number}")
+            print(f"\n✅ Тестовый пользователь создан: ID={test_user.id}, phone={test_user.phone_number}, telegram_id={test_user.telegram_id}")
 
             # Проверяем пользователя в базе
             result = await session.execute(text("SELECT * FROM users WHERE phone_number = '+998999999999'"))

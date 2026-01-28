@@ -7,7 +7,7 @@
 
 import asyncio
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
-from sqlalchemy import text, select
+from sqlalchemy import text
 
 from nms.config import get_settings
 from nms.models.db_models import User
@@ -64,14 +64,14 @@ async def diagnose():
         await session.commit()
 
         # Вставляем через ORM
-        new_user = User(phone_number=test_phone)
+        new_user = User(phone_number=test_phone, telegram_id=777777777)
         session.add(new_user)
         await session.flush()  # Получаем ID до коммита
 
-        print(f"После flush: new_user.id = {new_user.id}")
+        print(f"После flush: new_user.id = {new_user.id}, telegram_id = {new_user.telegram_id}")
 
         await session.commit()
-        print(f"После commit: new_user.id = {new_user.id}")
+        print(f"После commit: new_user.id = {new_user.id}, telegram_id = {new_user.telegram_id}")
 
         # Проверяем через SQL
         result = await session.execute(
@@ -82,7 +82,7 @@ async def diagnose():
         if row:
             print(f"✅ Запись НАЙДЕНА в базе через SQL: {dict(row._mapping)}")
         else:
-            print(f"❌ Запись НЕ НАЙДЕНА в базе через SQL!")
+            print("❌ Запись НЕ НАЙДЕНА в базе через SQL!")
             print("   Возможные причины:")
             print("   1. Транзакция не коммитится")
             print("   2. Проблема с правами доступа")
@@ -96,8 +96,8 @@ async def diagnose():
             text(f"DELETE FROM users WHERE phone_number = '{test_phone2}'")
         )
         await session.execute(
-            text(f"INSERT INTO users (phone_number, created_at, updated_at) "
-                 f"VALUES ('{test_phone2}', NOW(), NOW())")
+            text(f"INSERT INTO users (phone_number, telegram_id, created_at, updated_at) "
+                 f"VALUES ('{test_phone2}', 888888888, NOW(), NOW())")
         )
         await session.commit()
 
@@ -110,7 +110,7 @@ async def diagnose():
         if row:
             print(f"✅ Запись через SQL НАЙДЕНА: {dict(row._mapping)}")
         else:
-            print(f"❌ Запись через SQL НЕ НАЙДЕНА!")
+            print("❌ Запись через SQL НЕ НАЙДЕНА!")
 
         print("\n5. Все записи в таблице users:")
         print("-" * 60)

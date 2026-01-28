@@ -70,11 +70,11 @@ class OrderManager:
 
             return users_with_orders
 
-    async def create_user(self, phone_number: str):
+    async def create_user(self, phone_number: str, telegram_id: int | None = None):
         """Создать нового пользователя."""
         async with self.async_session_maker() as session:
             try:
-                # Проверяем, что пользователь не существует
+                # Проверяем, что пользователь не существует по номеру телефона
                 result = await session.execute(
                     select(User).where(User.phone_number == phone_number)
                 )
@@ -84,13 +84,24 @@ class OrderManager:
                     print(f"❌ Ошибка: Пользователь с номером {phone_number} уже существует (ID: {existing_user.id})!")
                     return None
 
+                # Проверяем, что пользователь не существует по telegram_id
+                if telegram_id:
+                    result = await session.execute(
+                        select(User).where(User.telegram_id == telegram_id)
+                    )
+                    existing_user = result.scalar_one_or_none()
+                    if existing_user:
+                        print(f"❌ Ошибка: Пользователь с telegram_id {telegram_id} уже существует (ID: {existing_user.id})!")
+                        return None
+
                 # Создаем пользователя
-                user = User(phone_number=phone_number)
+                user = User(phone_number=phone_number, telegram_id=telegram_id)
                 session.add(user)
                 await session.commit()
                 await session.refresh(user)
 
-                print(f"✅ Пользователь создан: ID={user.id}, Телефон={user.phone_number}")
+                tg_info = f", Telegram ID={user.telegram_id}" if user.telegram_id else ""
+                print(f"✅ Пользователь создан: ID={user.id}, Телефон={user.phone_number}{tg_info}")
                 return user
 
             except SQLAlchemyError as e:
@@ -307,15 +318,16 @@ def print_users(users):
         print("Создайте пользователя через API или скрипт recreate_database.py")
         return
 
-    print("\n" + "-" * 60)
+    print("\n" + "-" * 80)
     print("ПОЛЬЗОВАТЕЛИ:")
-    print("-" * 60)
-    print(f"{'ID':<5} {'Телефон':<20} {'Дата создания':<20}")
-    print("-" * 60)
+    print("-" * 80)
+    print(f"{'ID':<5} {'Телефон':<20} {'Telegram ID':<15} {'Дата создания':<20}")
+    print("-" * 80)
     for user in users:
         created = user.created_at.strftime("%Y-%m-%d %H:%M:%S")
-        print(f"{user.id:<5} {user.phone_number:<20} {created:<20}")
-    print("-" * 60)
+        tg_id = str(user.telegram_id) if user.telegram_id else "—"
+        print(f"{user.id:<5} {user.phone_number:<20} {tg_id:<15} {created:<20}")
+    print("-" * 80)
 
 
 def print_users_with_orders(users_with_orders):
@@ -325,15 +337,16 @@ def print_users_with_orders(users_with_orders):
         print("Создайте пользователя через API или скрипт recreate_database.py")
         return
 
-    print("\n" + "-" * 80)
+    print("\n" + "-" * 95)
     print("ПОЛЬЗОВАТЕЛИ И ЗАКАЗЫ:")
-    print("-" * 80)
-    print(f"{'ID':<5} {'Телефон':<20} {'Дата создания':<20}")
-    print("-" * 80)
+    print("-" * 95)
+    print(f"{'ID':<5} {'Телефон':<20} {'Telegram ID':<15} {'Дата создания':<20}")
+    print("-" * 95)
 
     for user, orders in users_with_orders:
         created = user.created_at.strftime("%Y-%m-%d %H:%M:%S")
-        print(f"{user.id:<5} {user.phone_number:<20} {created:<20}")
+        tg_id = str(user.telegram_id) if user.telegram_id else "—"
+        print(f"{user.id:<5} {user.phone_number:<20} {tg_id:<15} {created:<20}")
 
         # Если у пользователя есть заказы, выводим их с отступом
         if orders:
@@ -341,7 +354,7 @@ def print_users_with_orders(users_with_orders):
                 amount = f"{order.total_amount}" if order.total_amount else "—"
                 print(f"  └─ ID: {order.id:<5} Статус: {order.status:<12} Сумма: {amount}")
         # Если заказов нет, переходим к следующему пользователю без вывода
-    print("-" * 80)
+    print("-" * 95)
 
 
 def print_orders(orders):
@@ -388,8 +401,13 @@ async def handle_users_menu(manager: OrderManager, subchoice: str = None):
                 print("❌ Ошибка: Номер телефона не может быть пустым!")
                 return
 
-            await manager.create_user(phone_number)
+            telegram_id_input = input("Введите Telegram ID (или Enter для пропуска): ").strip()
+            telegram_id = int(telegram_id_input) if telegram_id_input else None
 
+            await manager.create_user(phone_number, telegram_id)
+
+        except ValueError:
+            print("❌ Ошибка: Telegram ID должен быть числом!")
         except Exception as e:
             print(f"❌ Ошибка: {e}")
     elif subchoice == "d":
