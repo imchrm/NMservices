@@ -8,7 +8,7 @@
 
 Проект построен на принципах **клиент-серверной архитектуры**:
 
-*   **Клиент (Фронтенд):** Telegram-бот, который отвечает за взаимодействие с пользователем (UI/UX). Его логика и структура описаны в документации (`doc/bot_flow.md`, `doc/sop.md`).
+*   **Клиент (Фронтенд):** Telegram-бот, который отвечает за взаимодействие с пользователем (UI/UX).
 *   **Сервер (Бэкенд):** Данный проект. Он реализован на **FastAPI** и отвечает за бизнес-логику, обработку данных и интеграции с внешними системами (даже если на этапе PoC они представлены заглушками).
 
 Такое разделение обеспечивает:
@@ -33,10 +33,13 @@
 
 ### Public API
 *   `GET /docs`: Автоматически сгенерированная интерактивная документация API (Swagger UI).
-*   `POST /register`: Регистрация пользователя. Принимает данные от бота (например, номер телефона).
-*   `POST /create_order`: Создание заказа. Принимает ID пользователя и тариф.
-*   `POST /users/register`: Новая версия регистрации пользователя.
-*   `POST /orders`: Новая версия создания заказа.
+*   `POST /users/register`: Регистрация пользователя. Принимает данные от бота (например, номер телефона).
+*   `POST /orders`: Создание заказа.
+*   `GET /users/by-telegram/{telegram_id}`: Получение пользователя по Telegram ID.
+
+### Legacy API (Deprecated)
+*   `POST /register`: Старая версия регистрации. Используйте `/users/register`.
+*   `POST /create_order`: Старая версия создания заказа. Используйте `/orders`.
 
 ### Admin API
 Эндпоинты для удаленного управления базой данных (требуют аутентификацию через `X-Admin-Key`):
@@ -45,7 +48,7 @@
 *   **Заказы:** `GET/POST /admin/orders`, `GET/PATCH/DELETE /admin/orders/{id}`
 *   **Статистика:** `GET /admin/stats`
 
-См. полную документацию в файле `ADMIN_API.md`.
+См. полную документацию в файле `docs/admin/ADMIN_API.md`.
 
 ## ⚙️ Установка и запуск
 
@@ -71,31 +74,31 @@ Official installation [guide](https://python-poetry.org/docs/#installation).
     ```bash
     poetry run uvicorn nms.main:app --reload --app-dir src
     ```
-    *(Путь `src.nomus.main:app` основан на структуре из `doc/sop.md`. Если точка входа отличается, скорректируйте команду)*
+    *(Если точка входа отличается, скорректируйте команду)*
 
 5.  **Проверьте работу API:**
     После запуска откройте в браузере адрес http://127.0.0.1:8000/docs.
-    Вы увидите интерфейс Swagger, где можно протестировать эндпоинты `/register` и `/create_order` напрямую, отправляя JSON-запросы.
+    Вы увидите интерфейс Swagger, где можно протестировать эндпоинты `/users/register` и `/orders` напрямую, отправляя JSON-запросы.
 
-    Тест создания заказа (/create_order)
+    Тест создания заказа (/orders)
 
     PowerShell:
     ```powershell
     $headers = @{ "X-API-Key" = "test_secret" }
     $body = @{ user_id = 1234; tariff_code = "standard_300" } | ConvertTo-Json
 
-    Invoke-RestMethod -Uri "http://127.0.0.1:8000/create_order" `
+    Invoke-RestMethod -Uri "http://127.0.0.1:8000/orders" `
         -Method Post `
         -Headers $headers `
         -ContentType "application/json" `
         -Body $body
     ```
-    Curl:
+    Curl (/users/register):
     ```shell
     curl -X 'POST' \
-        'http://127.0.0.1:8000/register' \
+        'http://127.0.0.1:8000/users/register' \
         -H 'accept: application/json' \
-        -H 'X-API-Key: your_secreat_key' \
+        -H 'X-API-Key: your_secret_key' \
         -H 'Content-Type: application/json' \
         -d '{
         "phone_number": "+998901234567"
@@ -127,14 +130,14 @@ poetry run python scripts/test_admin_api.py http://localhost:8000 admin_secret
 ```
 
 См. подробную документацию:
-- `QUICKSTART_ADMIN.md` - Быстрый старт с Admin API
-- `ADMIN_API.md` - Полная документация Admin API
-- `CHANGELOG_CORS.md` - Документация CORS
+- `docs/admin/QUICKSTART_ADMIN.md` - Быстрый старт с Admin API
+- `docs/admin/ADMIN_API.md` - Полная документация Admin API
+- `docs/admin/CHANGELOG_CORS.md` - Документация CORS
 - `scripts/README.md` - Документация по всем тестовым скриптам
 
 
 ## ➡️ Следующие шаги
 
-*   Реализация логики в слоях `Application` и `Infrastructure` согласно `sop.md`.
+*   Реализация логики в слоях `Application` и `Infrastructure`.
 *   Настройка взаимодействия между ботом и этим API с помощью HTTP-запросов (например, через библиотеку `httpx`).
 *   Написание тестов с использованием `pytest`.
