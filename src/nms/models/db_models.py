@@ -2,7 +2,7 @@
 
 from datetime import datetime
 # from decimal import Decimal
-from sqlalchemy import Column, String, DateTime, Integer, ForeignKey, DECIMAL, Text
+from sqlalchemy import Column, String, DateTime, Integer, ForeignKey, DECIMAL, Text, BigInteger
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from nms.database import Base
 
@@ -12,9 +12,9 @@ class User(Base):
 
     __tablename__ = "users"
 
-    # id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     id: Mapped[int] = mapped_column(primary_key=True)
     phone_number = Column(String(20), unique=True, nullable=False, index=True)
+    telegram_id = Column(BigInteger, unique=True, nullable=True, index=True)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(
         DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
@@ -25,7 +25,7 @@ class User(Base):
 
     def __repr__(self) -> str:
         """String representation of User."""
-        return f"<User(id={self.id}, phone={self.phone_number})>"
+        return f"<User(id={self.id}, phone={self.phone_number}, telegram_id={self.telegram_id})>"
 
 
 class Order(Base):
