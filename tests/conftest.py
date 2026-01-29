@@ -94,3 +94,21 @@ async def test_user(db_session: AsyncSession) -> int:
     await db_session.refresh(user)
 
     return user.id
+
+
+@pytest_asyncio.fixture
+async def test_user_with_telegram(db_session: AsyncSession) -> dict:
+    """
+    Create a test user with telegram_id in the database.
+
+    Returns:
+        Dict with user_id and telegram_id
+    """
+    from nms.models.db_models import User
+
+    user = User(phone_number="+998909876543", telegram_id=192496135)
+    db_session.add(user)
+    await db_session.commit()
+    await db_session.refresh(user)
+
+    return {"user_id": user.id, "telegram_id": user.telegram_id}
