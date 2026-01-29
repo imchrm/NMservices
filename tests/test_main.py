@@ -131,3 +131,69 @@ def test_orders_endpoint_nonexistent_user(client: TestClient, valid_api_key: str
     assert response.status_code == 400
     data = response.json()
     assert "User with ID 88888 does not exist" in data["detail"]
+
+
+# --- 5. Тесты telegram_id ---
+
+
+def test_register_with_telegram_id(client: TestClient, valid_api_key: str):
+    """Успешная регистрация с telegram_id"""
+    headers = {"X-API-Key": valid_api_key}
+    payload = {"phone_number": "+998901112244", "telegram_id": 123456789}
+
+    response = client.post("/users/register", json=payload, headers=headers)
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["status"] == "ok"
+    assert "user_id" in data
+    assert isinstance(data["user_id"], int)
+
+
+def test_get_user_by_telegram_id_found(
+    client: TestClient, valid_api_key: str, test_user_with_telegram: dict
+):
+    """Поиск пользователя по telegram_id — найден"""
+    headers = {"X-API-Key": valid_api_key}
+    telegram_id = test_user_with_telegram["telegram_id"]
+
+    response = client.get(f"/users/by-telegram/{telegram_id}", headers=headers)
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["telegram_id"] == telegram_id
+    assert data["id"] == test_user_with_telegram["user_id"]
+    assert "phone_number" in data
+    assert "created_at" in data
+    assert "updated_at" in data
+
+
+def test_get_user_by_telegram_id_not_found(client: TestClient, valid_api_key: str):
+    """Поиск пользователя по telegram_id — не найден (404)"""
+    headers = {"X-API-Key": valid_api_key}
+    telegram_id = 999999999  # Несуществующий telegram_id
+
+    response = client.get(f"/users/by-telegram/{telegram_id}", headers=headers)
+
+    assert response.status_code == 404
+    data = response.json()
+    assert data["detail"] == "User not found"
+
+
+def test_register_existing_telegram_id_returns_same_user(
+    client: TestClient, valid_api_key: str, test_user_with_telegram: dict
+):
+    """Повторная регистрация с тем же telegram_id возвращает существующего пользователя"""
+    headers = {"X-API-Key": valid_api_key}
+    payload = {
+        "phone_number": "+998901119999",  # Другой номер
+        "telegram_id": test_user_with_telegram["telegram_id"],  # Тот же telegram_id
+    }
+
+    response = client.post("/users/register", json=payload, headers=headers)
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["status"] == "ok"
+    # Должен вернуть ID существующего пользователя
+    assert data["user_id"] == test_user_with_telegram["user_id"]
