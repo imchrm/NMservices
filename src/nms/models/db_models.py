@@ -15,6 +15,7 @@ class User(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     phone_number = Column(String(20), unique=True, nullable=False, index=True)
     telegram_id = Column(BigInteger, unique=True, nullable=True, index=True)
+    language_code = Column(String(5), nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(
         DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
@@ -25,7 +26,7 @@ class User(Base):
 
     def __repr__(self) -> str:
         """String representation of User."""
-        return f"<User(id={self.id}, phone={self.phone_number}, telegram_id={self.telegram_id})>"
+        return f"<User(id={self.id}, phone={self.phone_number}, telegram_id={self.telegram_id}, lang={self.language_code})>"
 
 
 class Order(Base):
