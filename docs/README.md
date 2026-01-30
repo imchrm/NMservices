@@ -24,16 +24,26 @@
 
 ### Процесс разработки
 
-- **[Bot Flow](development/bot_flow.md)** - Логика работы бота
-- **[SOP (Standard Operating Procedures)](development/sop.md)** - Стандартные процедуры
+- **[Database Setup](development/DATABASE_SETUP.md)** - Настройка базы данных
 - **[Refactoring Guide](development/REFACTORING.md)** - Руководство по рефакторингу
 - **[Testing Guide](development/TESTING.md)** - Тестирование проекта
+- **[DB Testing](development/DB_TESTING.md)** - Тестирование базы данных
+- **[Network Testing](development/NETWORK_TESTING.md)** - Тестирование сети
+- **[Troubleshooting DB](development/TROUBLESHOOTING_DB.md)** - Устранение неполадок БД
+
+### Admin API
+
+- **[Admin API](admin/ADMIN_API.md)** - Полная документация Admin API
+- **[Quickstart Admin](admin/QUICKSTART_ADMIN.md)** - Быстрый старт с Admin API
+- **[CORS Setup](admin/CORS_SETUP_SUMMARY.md)** - Настройка CORS
 
 ---
 
 ## Деплой и эксплуатация
 
 - **[Deployment Guide](deployment/DEPLOYMENT.md)** - Инструкции по деплою в продакшн
+- **[Local Deployment](deployment/DEPLOYMENT_LOCAL.md)** - Локальный деплой
+- **[PostgreSQL Deployment](deployment/postgresql-deployment.md)** - Деплой PostgreSQL
 
 ---
 
@@ -53,14 +63,20 @@ docs/
 │   ├── QUICK_MERGE.md                 # Краткая инструкция
 │   └── PR_DESCRIPTION.md              # Оформление Pull Request
 │
+├── admin/                             # Администрирование
+│   ├── ADMIN_API.md                   # API документация
+│   └── QUICKSTART_ADMIN.md            # Быстрый старт
+│
 ├── development/                       # Процесс разработки
-│   ├── bot_flow.md                    # Логика бота
-│   ├── sop.md                         # Стандартные процедуры
+│   ├── DATABASE_SETUP.md              # Настройка БД
 │   ├── REFACTORING.md                 # Рефакторинг
-│   └── TESTING.md                     # Тестирование
+│   ├── TESTING.md                     # Тестирование
+│   └── TROUBLESHOOTING_DB.md          # Отладка БД
 │
 ├── deployment/                        # Деплой
-│   └── DEPLOYMENT.md                  # Инструкции по деплою
+│   ├── DEPLOYMENT.md                  # Инструкции по деплою
+│   ├── DEPLOYMENT_LOCAL.md            # Локальный запуск
+│   └── postgresql-deployment.md       # Настройка PG
 │
 └── archive/                           # Устаревшие документы
     ├── DOCS_INDEX.md                  # Старый индекс
@@ -81,10 +97,6 @@ docs/
 ### Как создать Pull Request?
 
 См. [PR Description Guide](git/PR_DESCRIPTION.md)
-
-### Как работает бот?
-
-См. [Bot Flow Documentation](development/bot_flow.md)
 
 ### Как задеплоить проект?
 
