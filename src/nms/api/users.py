@@ -3,7 +3,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from nms.models import UserRegistrationRequest, RegistrationResponse
-from nms.models.user import UserResponse
+from nms.models.user import UserResponse, LanguageUpdateRequest, LanguageUpdateResponse
 from nms.services.auth import AuthService
 from nms.database import get_db
 from nms.api.dependencies import get_api_key
@@ -32,7 +32,7 @@ async def register_user(
         Registration response with user ID
     """
     user_id = await auth_service.register_user(
-        request.phone_number, db, request.telegram_id
+        request.phone_number, db, request.telegram_id, request.language_code
     )
 
     return RegistrationResponse(
@@ -68,3 +68,36 @@ async def get_user_by_telegram_id(
         raise HTTPException(status_code=404, detail="User not found")
 
     return UserResponse.model_validate(user)
+
+
+@router.patch(
+    "/{user_id}/language",
+    response_model=LanguageUpdateResponse,
+    dependencies=[Depends(get_api_key)],
+    summary="Update user language",
+)
+async def update_user_language(
+    user_id: int,
+    request: LanguageUpdateRequest,
+    db: AsyncSession = Depends(get_db),
+) -> LanguageUpdateResponse:
+    """
+    Update user's preferred language.
+
+    Args:
+        user_id: User ID
+        request: Language update data
+        db: Database session
+
+    Returns:
+        Status response
+
+    Raises:
+        HTTPException: 404 if user not found
+    """
+    success = await AuthService.update_user_language(user_id, request.language_code, db)
+
+    if not success:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    return LanguageUpdateResponse(status="ok")
