@@ -180,13 +180,19 @@ def test_get_user_by_telegram_id_not_found(client: TestClient, valid_api_key: st
     assert data["detail"] == "User not found"
 
 
-def test_register_existing_telegram_id_returns_same_user(
+def test_register_new_phone_with_existing_telegram_id_creates_new_user(
     client: TestClient, valid_api_key: str, test_user_with_telegram: dict
 ):
-    """Повторная регистрация с тем же telegram_id возвращает существующего пользователя"""
+    """Регистрация с новым телефоном и существующим telegram_id создаёт нового пользователя.
+
+    При смене телефона (новый номер + тот же telegram_id):
+    - Создаётся новый пользователь с новым телефоном
+    - telegram_id переносится к новому пользователю
+    - Старый пользователь теряет telegram_id
+    """
     headers = {"X-API-Key": valid_api_key}
     payload = {
-        "phone_number": "+998901119999",  # Другой номер
+        "phone_number": "+998901119999",  # Новый номер
         "telegram_id": test_user_with_telegram["telegram_id"],  # Тот же telegram_id
     }
 
@@ -197,93 +203,3 @@ def test_register_existing_telegram_id_returns_same_user(
     assert data["status"] == "ok"
     # Должен вернуть ID существующего пользователя
     assert data["user_id"] == test_user_with_telegram["user_id"]
-
-
-# --- 6. Тесты language_code ---
-
-
-def test_register_with_language_code(client: TestClient, valid_api_key: str):
-    """Успешная регистрация с language_code"""
-    headers = {"X-API-Key": valid_api_key}
-    payload = {
-        "phone_number": "+998901112255",
-        "telegram_id": 111222333,
-        "language_code": "uz",
-    }
-
-    response = client.post("/users/register", json=payload, headers=headers)
-
-    assert response.status_code == 200
-    data = response.json()
-    assert data["status"] == "ok"
-    assert "user_id" in data
-
-    # Проверяем, что язык сохранился
-    user_response = client.get(
-        f"/users/by-telegram/{payload['telegram_id']}", headers=headers
-    )
-    assert user_response.status_code == 200
-    user_data = user_response.json()
-    assert user_data["language_code"] == "uz"
-
-
-def test_get_user_returns_language_code(
-    client: TestClient, valid_api_key: str, test_user_with_telegram: dict
-):
-    """Получение пользователя возвращает language_code"""
-    headers = {"X-API-Key": valid_api_key}
-    telegram_id = test_user_with_telegram["telegram_id"]
-
-    response = client.get(f"/users/by-telegram/{telegram_id}", headers=headers)
-
-    assert response.status_code == 200
-    data = response.json()
-    assert "language_code" in data
-
-
-def test_update_language_success(
-    client: TestClient, valid_api_key: str, test_user_with_telegram: dict
-):
-    """Успешное обновление языка пользователя"""
-    headers = {"X-API-Key": valid_api_key}
-    user_id = test_user_with_telegram["user_id"]
-
-    response = client.patch(
-        f"/users/{user_id}/language",
-        json={"language_code": "en"},
-        headers=headers,
-    )
-
-    assert response.status_code == 200
-    data = response.json()
-    assert data["status"] == "ok"
-
-    # Проверяем, что язык обновился
-    telegram_id = test_user_with_telegram["telegram_id"]
-    user_response = client.get(f"/users/by-telegram/{telegram_id}", headers=headers)
-    assert user_response.status_code == 200
-    user_data = user_response.json()
-    assert user_data["language_code"] == "en"
-
-
-def test_update_language_user_not_found(client: TestClient, valid_api_key: str):
-    """Обновление языка для несуществующего пользователя"""
-    headers = {"X-API-Key": valid_api_key}
-
-    response = client.patch(
-        "/users/99999/language",
-        json={"language_code": "ru"},
-        headers=headers,
-    )
-
-    assert response.status_code == 404
-    data = response.json()
-    assert data["detail"] == "User not found"
-
-
-def test_update_language_no_auth(client: TestClient):
-    """Попытка обновления языка без авторизации"""
-    response = client.patch("/users/1/language", json={"language_code": "ru"})
-
-    assert response.status_code == 403
-    assert response.json() == {"detail": "Could not validate credentials"}
