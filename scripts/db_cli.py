@@ -318,16 +318,17 @@ def print_users(users):
         print("Создайте пользователя через API или скрипт recreate_database.py")
         return
 
-    print("\n" + "-" * 80)
+    print("\n" + "-" * 90)
     print("ПОЛЬЗОВАТЕЛИ:")
-    print("-" * 80)
-    print(f"{'ID':<5} {'Телефон':<20} {'Telegram ID':<15} {'Дата создания':<20}")
-    print("-" * 80)
+    print("-" * 90)
+    print(f"{'ID':<5} {'Телефон':<20} {'Telegram ID':<15} {'Язык':<6} {'Дата создания':<20}")
+    print("-" * 90)
     for user in users:
         created = user.created_at.strftime("%Y-%m-%d %H:%M:%S")
         tg_id = str(user.telegram_id) if user.telegram_id else "—"
-        print(f"{user.id:<5} {user.phone_number:<20} {tg_id:<15} {created:<20}")
-    print("-" * 80)
+        lang = user.language_code if user.language_code else "—"
+        print(f"{user.id:<5} {user.phone_number:<20} {tg_id:<15} {lang:<6} {created:<20}")
+    print("-" * 90)
 
 
 def print_users_with_orders(users_with_orders):
