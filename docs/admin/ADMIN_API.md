@@ -44,6 +44,8 @@ Response:
 }
 ```
 
+> **Note:** Although the user model in the database has a `telegram_id` field, the current Admin API response model `AdminUserResponse` does not include it yet.
+
 #### Create User
 ```bash
 POST /admin/users
