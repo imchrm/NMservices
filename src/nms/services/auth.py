@@ -32,6 +32,12 @@ class AuthService:
         """
         Save user to database.
 
+        Priority: phone_number is the primary identifier.
+        - If user with this phone exists — update telegram_id if needed
+        - If user with this telegram_id exists (but different phone) — clear old telegram_id,
+          then create/update user with new phone
+        - Otherwise — create new user
+
         Args:
             phone: User's phone number
             db: Database session
@@ -41,17 +47,18 @@ class AuthService:
         Returns:
             User ID from database
         """
-        # Check if user already exists by telegram_id
+        # 1. Check if user exists by phone (primary identifier)
+        result = await db.execute(select(User).where(User.phone_number == phone))
+        user_by_phone = result.scalar_one_or_none()
+
+        # 2. Check if telegram_id is already used by another user
+        user_by_telegram = None
         if telegram_id:
             result = await db.execute(
                 select(User).where(User.telegram_id == telegram_id)
             )
             existing_user = result.scalar_one_or_none()
             if existing_user:
-                # Update language_code if provided
-                if language_code:
-                    existing_user.language_code = language_code
-                    await db.commit()
                 print(f"[DB] User with telegram_id {telegram_id} already exists with ID {existing_user.id}")
                 return existing_user.id
 
@@ -63,17 +70,13 @@ class AuthService:
             # Update telegram_id if not set
             if telegram_id and not existing_user.telegram_id:
                 existing_user.telegram_id = telegram_id
-            # Update language_code if provided
-            if language_code:
-                existing_user.language_code = language_code
-            if telegram_id or language_code:
                 await db.commit()
-                print(f"[DB] User {phone} updated with telegram_id={telegram_id}, language_code={language_code}")
+                print(f"[DB] User {phone} updated with telegram_id {telegram_id}")
             print(f"[DB] User {phone} already exists with ID {existing_user.id}")
             return existing_user.id
 
         # Create new user
-        new_user = User(phone_number=phone, telegram_id=telegram_id, language_code=language_code)
+        new_user = User(phone_number=phone, telegram_id=telegram_id)
         db.add(new_user)
         await db.commit()
         await db.refresh(new_user)
