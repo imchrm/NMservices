@@ -70,7 +70,12 @@ class OrderManager:
 
             return users_with_orders
 
-    async def create_user(self, phone_number: str, telegram_id: int | None = None):
+    async def create_user(
+        self,
+        phone_number: str,
+        telegram_id: int | None = None,
+        language_code: str | None = None,
+    ):
         """Создать нового пользователя."""
         async with self.async_session_maker() as session:
             try:
@@ -95,13 +100,14 @@ class OrderManager:
                         return None
 
                 # Создаем пользователя
-                user = User(phone_number=phone_number, telegram_id=telegram_id)
+                user = User(phone_number=phone_number, telegram_id=telegram_id, language_code=language_code)
                 session.add(user)
                 await session.commit()
                 await session.refresh(user)
 
                 tg_info = f", Telegram ID={user.telegram_id}" if user.telegram_id else ""
-                print(f"✅ Пользователь создан: ID={user.id}, Телефон={user.phone_number}{tg_info}")
+                lang_info = f", Язык={user.language_code}" if user.language_code else ""
+                print(f"✅ Пользователь создан: ID={user.id}, Телефон={user.phone_number}{tg_info}{lang_info}")
                 return user
 
             except SQLAlchemyError as e:
@@ -405,7 +411,22 @@ async def handle_users_menu(manager: OrderManager, subchoice: str = None):
             telegram_id_input = input("Введите Telegram ID (или Enter для пропуска): ").strip()
             telegram_id = int(telegram_id_input) if telegram_id_input else None
 
-            await manager.create_user(phone_number, telegram_id)
+            print("Выберите язык:")
+            print("  1 или ru - Русский")
+            print("  2 или uz - Узбекский")
+            print("  3 или en - English")
+            print("  0 или Enter - Пропустить")
+            lang_choice = input("Ваш выбор [0]: ").strip().lower()
+
+            language_code = None
+            if lang_choice in ("1", "ru"):
+                language_code = "ru"
+            elif lang_choice in ("2", "uz"):
+                language_code = "uz"
+            elif lang_choice in ("3", "en"):
+                language_code = "en"
+
+            await manager.create_user(phone_number, telegram_id, language_code)
 
         except ValueError:
             print("❌ Ошибка: Telegram ID должен быть числом!")
