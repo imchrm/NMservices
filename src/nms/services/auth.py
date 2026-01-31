@@ -33,7 +33,7 @@ class AuthService:
         Save user to database.
 
         Priority: phone_number is the primary identifier.
-        - If user with this phone exists — update telegram_id if needed
+        - If user with this phone exists — update telegram_id/language_code if needed
         - If user with this telegram_id exists (but different phone) — clear old telegram_id,
           then create/update user with new phone
         - Otherwise — create new user
@@ -57,26 +57,37 @@ class AuthService:
             result = await db.execute(
                 select(User).where(User.telegram_id == telegram_id)
             )
-            existing_user = result.scalar_one_or_none()
-            if existing_user:
-                print(f"[DB] User with telegram_id {telegram_id} already exists with ID {existing_user.id}")
-                return existing_user.id
+            user_by_telegram = result.scalar_one_or_none()
 
-        # Check if user already exists by phone
-        result = await db.execute(select(User).where(User.phone_number == phone))
-        existing_user = result.scalar_one_or_none()
+        # 3. If telegram_id belongs to a different user — clear it (user changed phone)
+        if user_by_telegram and user_by_phone and user_by_telegram.id != user_by_phone.id:
+            print(f"[DB] Clearing telegram_id {telegram_id} from user ID {user_by_telegram.id} (phone changed)")
+            user_by_telegram.telegram_id = None
+            await db.flush()
+        elif user_by_telegram and not user_by_phone:
+            # telegram_id exists but phone is new — clear old telegram_id
+            print(f"[DB] Clearing telegram_id {telegram_id} from user ID {user_by_telegram.id} (new phone)")
+            user_by_telegram.telegram_id = None
+            await db.flush()
 
-        if existing_user:
-            # Update telegram_id if not set
-            if telegram_id and not existing_user.telegram_id:
-                existing_user.telegram_id = telegram_id
+        # 4. User with this phone exists — update fields if needed
+        if user_by_phone:
+            updated = False
+            if telegram_id and user_by_phone.telegram_id != telegram_id:
+                user_by_phone.telegram_id = telegram_id
+                updated = True
+            if language_code and user_by_phone.language_code != language_code:
+                user_by_phone.language_code = language_code
+                updated = True
+            if updated:
                 await db.commit()
-                print(f"[DB] User {phone} updated with telegram_id {telegram_id}")
-            print(f"[DB] User {phone} already exists with ID {existing_user.id}")
-            return existing_user.id
+                print(f"[DB] User {phone} updated: telegram_id={telegram_id}, language_code={language_code}")
+            else:
+                print(f"[DB] User {phone} already exists with ID {user_by_phone.id}")
+            return user_by_phone.id
 
-        # Create new user
-        new_user = User(phone_number=phone, telegram_id=telegram_id)
+        # 5. Create new user
+        new_user = User(phone_number=phone, telegram_id=telegram_id, language_code=language_code)
         db.add(new_user)
         await db.commit()
         await db.refresh(new_user)
