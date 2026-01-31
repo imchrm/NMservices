@@ -201,5 +201,5 @@ def test_register_new_phone_with_existing_telegram_id_creates_new_user(
     assert response.status_code == 200
     data = response.json()
     assert data["status"] == "ok"
-    # Должен вернуть ID существующего пользователя
-    assert data["user_id"] == test_user_with_telegram["user_id"]
+    # Должен создать НОВОГО пользователя (телефон — первичный идентификатор)
+    assert data["user_id"] != test_user_with_telegram["user_id"]
