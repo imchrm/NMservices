@@ -48,7 +48,7 @@ CORS (Cross-Origin Resource Sharing) middleware добавлен в NMservices B
 
 ---
 
-### Production (сервер 192.168.1.191)
+### Production (сервер)
 
 1. **Обновить .env на сервере:**
    ```bash
@@ -68,7 +68,7 @@ CORS (Cross-Origin Resource Sharing) middleware добавлен в NMservices B
 
 3. **Проверить CORS:**
    ```bash
-   ./scripts/test_cors.sh http://192.168.1.191:8000 https://admin.nmservices.uz
+   ./scripts/test_cors.sh http://127.0.0.1:8000 https://admin.nmservices.uz
    ```
 
 ---
