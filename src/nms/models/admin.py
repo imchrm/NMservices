@@ -12,6 +12,8 @@ class AdminUserResponse(BaseModel):
     
     id: int
     phone_number: str
+    telegram_id: Optional[int] = None
+    language_code: Optional[str] = None
     created_at: datetime
     updated_at: datetime
 
@@ -24,6 +26,8 @@ class AdminUserWithOrdersResponse(BaseModel):
     
     id: int
     phone_number: str
+    telegram_id: Optional[int] = None
+    language_code: Optional[str] = None
     created_at: datetime
     updated_at: datetime
     orders: list["AdminOrderResponse"]
@@ -36,6 +40,8 @@ class AdminUserCreateRequest(BaseModel):
     """Request model for creating a user."""
     
     phone_number: str = Field(..., description="User's phone number")
+    telegram_id: Optional[int] = Field(None, description="User's Telegram ID")
+    language_code: Optional[str] = Field(None, description="User's language code")
 
 
 class AdminUserListResponse(BaseModel):

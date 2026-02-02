@@ -120,7 +120,11 @@ async def create_user(
             )
         
         # Create new user
-        new_user = User(phone_number=request.phone_number)
+        new_user = User(
+            phone_number=request.phone_number,
+            telegram_id=request.telegram_id,
+            language_code=request.language_code
+        )
         db.add(new_user)
         await db.commit()
         await db.refresh(new_user)
