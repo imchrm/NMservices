@@ -27,7 +27,7 @@ nohup poetry run nms > nms.log 2>&1 &
 
 ```bash
 curl -H "X-Admin-Key: your_secure_admin_key_here" \
-  http://192.168.1.191:8000/admin/stats
+  http://127.0.0.1:8000/admin/stats
 ```
 
 ## 📋 Основные операции
@@ -36,7 +36,7 @@ curl -H "X-Admin-Key: your_secure_admin_key_here" \
 
 ```bash
 curl -H "X-Admin-Key: admin_secret" \
-  http://192.168.1.191:8000/admin/stats
+  http://127.0.0.1:8000/admin/stats
 ```
 
 Ответ:
@@ -55,7 +55,7 @@ curl -H "X-Admin-Key: admin_secret" \
 
 ```bash
 curl -H "X-Admin-Key: admin_secret" \
-  http://192.168.1.191:8000/admin/users
+  http://127.0.0.1:8000/admin/users
 ```
 
 ### Создать пользователя
@@ -64,22 +64,26 @@ curl -H "X-Admin-Key: admin_secret" \
 curl -X POST \
   -H "X-Admin-Key: admin_secret" \
   -H "Content-Type: application/json" \
-  -d '{"phone_number": "+998901234567"}' \
-  http://192.168.1.191:8000/admin/users
+  -d '{
+    "phone_number": "+998901234567",
+    "telegram_id": 123456789,
+    "language_code": "ru"
+  }' \
+  http://127.0.0.1:8000/admin/users
 ```
 
 ### Получить пользователя по ID
 
 ```bash
 curl -H "X-Admin-Key: admin_secret" \
-  http://192.168.1.191:8000/admin/users/1
+  http://127.0.0.1:8000/admin/users/1
 ```
 
 ### Получить заказы пользователя
 
 ```bash
 curl -H "X-Admin-Key: admin_secret" \
-  http://192.168.1.191:8000/admin/users/1/orders
+  http://127.0.0.1:8000/admin/users/1/orders
 ```
 
 ### Список заказов
@@ -87,15 +91,15 @@ curl -H "X-Admin-Key: admin_secret" \
 ```bash
 # Все заказы
 curl -H "X-Admin-Key: admin_secret" \
-  http://192.168.1.191:8000/admin/orders
+  http://127.0.0.1:8000/admin/orders
 
 # Только pending
 curl -H "X-Admin-Key: admin_secret" \
-  "http://192.168.1.191:8000/admin/orders?status_filter=pending"
+  "http://127.0.0.1:8000/admin/orders?status_filter=pending"
 
 # С пагинацией
 curl -H "X-Admin-Key: admin_secret" \
-  "http://192.168.1.191:8000/admin/orders?skip=0&limit=10"
+  "http://127.0.0.1:8000/admin/orders?skip=0&limit=10"
 ```
 
 ### Создать заказ
@@ -110,7 +114,7 @@ curl -X POST \
     "total_amount": 300.00,
     "notes": "Manual order"
   }' \
-  http://192.168.1.191:8000/admin/orders
+  http://127.0.0.1:8000/admin/orders
 ```
 
 ### Обновить заказ
@@ -120,7 +124,7 @@ curl -X PATCH \
   -H "X-Admin-Key: admin_secret" \
   -H "Content-Type: application/json" \
   -d '{"status": "completed", "total_amount": 350.00}' \
-  http://192.168.1.191:8000/admin/orders/1
+  http://127.0.0.1:8000/admin/orders/1
 ```
 
 ### Удалить заказ
@@ -128,7 +132,7 @@ curl -X PATCH \
 ```bash
 curl -X DELETE \
   -H "X-Admin-Key: admin_secret" \
-  http://192.168.1.191:8000/admin/orders/1
+  http://127.0.0.1:8000/admin/orders/1
 ```
 
 ### Удалить пользователя (с заказами)
@@ -136,7 +140,7 @@ curl -X DELETE \
 ```bash
 curl -X DELETE \
   -H "X-Admin-Key: admin_secret" \
-  http://192.168.1.191:8000/admin/users/1
+  http://127.0.0.1:8000/admin/users/1
 ```
 
 ⚠️ **ВНИМАНИЕ:** Удаление пользователя автоматически удалит все его заказы (CASCADE)!
@@ -147,7 +151,7 @@ curl -X DELETE \
 
 ```bash
 # На локальной машине
-poetry run python scripts/test_admin_api.py http://192.168.1.191:8000 admin_secret
+poetry run python scripts/test_admin_api.py http://127.0.0.1:8000 admin_secret
 ```
 
 Этот скрипт:
@@ -162,7 +166,7 @@ poetry run python scripts/test_admin_api.py http://192.168.1.191:8000 admin_secr
 
 ```bash
 chmod +x scripts/test_admin_api.sh
-./scripts/test_admin_api.sh http://192.168.1.191:8000 admin_secret
+./scripts/test_admin_api.sh http://127.0.0.1:8000 admin_secret
 ```
 
 ## 📱 Использование из приложений
@@ -172,7 +176,7 @@ chmod +x scripts/test_admin_api.sh
 ```python
 import httpx
 
-BASE_URL = "http://192.168.1.191:8000"
+BASE_URL = "http://127.0.0.1:8000"
 ADMIN_KEY = "admin_secret"
 headers = {"X-Admin-Key": ADMIN_KEY}
 
@@ -197,7 +201,7 @@ async with httpx.AsyncClient() as client:
 ```javascript
 const axios = require('axios');
 
-const BASE_URL = 'http://192.168.1.191:8000';
+const BASE_URL = 'http://127.0.0.1:8000';
 const ADMIN_KEY = 'admin_secret';
 
 const headers = {
@@ -243,7 +247,7 @@ console.log(`Created user ID: ${user.data.id}`);
 
 Для удобного тестирования через веб-интерфейс:
 
-1. Откройте http://192.168.1.191:8000/docs
+1. Откройте http://127.0.0.1:8000/docs
 2. Нажмите кнопку "Authorize"
 3. В поле "X-Admin-Key" введите ваш admin ключ
 4. Теперь можно тестировать все admin эндпоинты прямо из браузера!
