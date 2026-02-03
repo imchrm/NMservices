@@ -1,6 +1,6 @@
 [project]
 name = "nms"
-version = "0.5.2"
+version = "0.6.0"
 description = "Microservices for NoMus"
 authors = [{ name = "Dimitrii Chrm", email = "im.chrm@gmail.com" }]
 license = "MIT"
