@@ -1,10 +1,11 @@
 """Order management services."""
 
 import logging
+from datetime import datetime
 from decimal import Decimal
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
-from nms.models.db_models import Order, User
+from nms.models.db_models import Order, User, Service
 
 log = logging.getLogger(__name__)
 
@@ -32,20 +33,43 @@ class OrderService:
         return True
 
     @staticmethod
+    async def get_service(service_id: int, db: AsyncSession) -> Service | None:
+        """
+        Get service by ID.
+
+        Args:
+            service_id: Service ID
+            db: Database session
+
+        Returns:
+            Service if found and active, None otherwise
+        """
+        result = await db.execute(
+            select(Service).where(Service.id == service_id, Service.is_active == True)
+        )
+        return result.scalar_one_or_none()
+
+    @staticmethod
     async def save_order(
         user_id: int,
-        tariff: str,
+        service_id: int,
         amount: Decimal,
-        db: AsyncSession
+        db: AsyncSession,
+        address_text: str | None = None,
+        scheduled_at: datetime | None = None,
+        notes: str | None = None,
     ) -> int:
         """
         Save order to database.
 
         Args:
             user_id: ID of user creating order
-            tariff: Tariff code
-            amount: Order amount
+            service_id: ID of selected service
+            amount: Order amount (copied from service base_price)
             db: Database session
+            address_text: Address for service delivery
+            scheduled_at: Scheduled time for service
+            notes: Additional notes
 
         Returns:
             Created order ID
@@ -64,15 +88,21 @@ class OrderService:
         # Create new order
         new_order = Order(
             user_id=user_id,
+            service_id=service_id,
             status="pending",
             total_amount=amount,
-            notes=f"Tariff: {tariff}"
+            address_text=address_text,
+            scheduled_at=scheduled_at,
+            notes=notes,
         )
         db.add(new_order)
         await db.commit()
         await db.refresh(new_order)
 
-        log.info(f"[DB] Order #{new_order.id} created for User {user_id} (Tariff: {tariff}, Amount: {amount})")
+        log.info(
+            f"[DB] Order #{new_order.id} created for User {user_id} "
+            f"(Service: {service_id}, Amount: {amount})"
+        )
         return new_order.id
 
     @staticmethod
@@ -93,25 +123,38 @@ class OrderService:
     async def create_order(
         self,
         user_id: int,
-        tariff_code: str,
+        service_id: int,
         db: AsyncSession,
-        amount: Decimal = Decimal("30000.00")
+        address_text: str | None = None,
+        scheduled_at: datetime | None = None,
+        notes: str | None = None,
     ) -> int:
         """
         Create new order with payment processing.
 
         Args:
             user_id: ID of user creating order
-            tariff_code: Tariff code for order
+            service_id: ID of selected service
             db: Database session
-            amount: Payment amount (default: 30000.00 sum)
+            address_text: Address for service delivery
+            scheduled_at: Scheduled time for service
+            notes: Additional notes
 
         Returns:
             Created order ID
 
         Raises:
-            ValueError: If user doesn't exist or payment fails
+            ValueError: If user doesn't exist, service not found, or payment fails
         """
+        # Get service and validate
+        service = await self.get_service(service_id, db)
+        if not service:
+            log.error(f"Service with ID {service_id} not found or inactive")
+            raise ValueError(f"Service with ID {service_id} not found or inactive")
+
+        # Get amount from service (Variant C - copy price)
+        amount = service.base_price or Decimal("0.00")
+
         # Process payment first
         payment_success = await self.process_payment(amount)
         if not payment_success:
@@ -119,7 +162,15 @@ class OrderService:
             raise ValueError("Payment processing failed")
 
         # Save order to database
-        order_id = await self.save_order(user_id, tariff_code, amount, db)
+        order_id = await self.save_order(
+            user_id=user_id,
+            service_id=service_id,
+            amount=amount,
+            db=db,
+            address_text=address_text,
+            scheduled_at=scheduled_at,
+            notes=notes,
+        )
 
         # Notify dispatcher
         await self.notify_dispatcher(order_id)
