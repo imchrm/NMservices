@@ -112,3 +112,28 @@ async def test_user_with_telegram(db_session: AsyncSession) -> dict:
     await db_session.refresh(user)
 
     return {"user_id": user.id, "telegram_id": user.telegram_id}
+
+
+@pytest_asyncio.fixture
+async def test_service(db_session: AsyncSession) -> int:
+    """
+    Create a test service in the database.
+
+    Returns:
+        Service ID of created test service
+    """
+    from nms.models.db_models import Service
+    from decimal import Decimal
+
+    service = Service(
+        name="Test Massage",
+        description="Test massage service",
+        base_price=Decimal("150000.00"),
+        duration_minutes=60,
+        is_active=True,
+    )
+    db_session.add(service)
+    await db_session.commit()
+    await db_session.refresh(service)
+
+    return service.id

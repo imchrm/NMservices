@@ -8,11 +8,14 @@
 
 ```
 users (1) ----< (N) orders
-users (1) ----< (N) addresses
-orders (1) ----< (N) order_items
-orders (1) ----(1) order_addresses
-services (1) ----< (N) order_items
+services (1) ----< (N) orders
+users (1) ----< (N) addresses       [MVP+]
+orders (1) ----< (N) order_items    [MVP+]
+orders (1) ----(1) order_addresses  [MVP+]
+services (1) ----< (N) order_items  [MVP+]
 ```
+
+**Примечание:** Таблицы с пометкой `[MVP+]` будут реализованы в следующем этапе.
 
 ## Таблицы
 
@@ -58,8 +61,11 @@ services (1) ----< (N) order_items
 |----------|-----|-------------|----------|
 | `id` | SERIAL | PRIMARY KEY | Уникальный идентификатор заказа |
 | `user_id` | INTEGER | NOT NULL, REFERENCES users(id) ON DELETE CASCADE | Ссылка на пользователя |
+| `service_id` | INTEGER | REFERENCES services(id) ON DELETE SET NULL | Ссылка на услугу |
 | `status` | VARCHAR(50) | NOT NULL, DEFAULT 'pending' | Статус заказа |
-| `total_amount` | DECIMAL(10, 2) | - | Общая сумма заказа |
+| `total_amount` | DECIMAL(10, 2) | - | Общая сумма заказа (копируется из услуги при создании) |
+| `address_text` | TEXT | - | Адрес выполнения услуги |
+| `scheduled_at` | TIMESTAMP | - | Запланированное время выполнения |
 | `notes` | TEXT | - | Дополнительные примечания к заказу |
 | `created_at` | TIMESTAMP | NOT NULL, DEFAULT CURRENT_TIMESTAMP | Дата и время создания заказа |
 | `updated_at` | TIMESTAMP | NOT NULL, DEFAULT CURRENT_TIMESTAMP | Дата и время последнего обновления |
@@ -73,11 +79,14 @@ services (1) ----< (N) order_items
 
 **Индексы:**
 - `idx_orders_user_id` на поле `user_id`
+- `idx_orders_service_id` на поле `service_id`
 - `idx_orders_status` на поле `status`
 - `idx_orders_created_at` на поле `created_at`
 
 **Особенности:**
 - При удалении пользователя все его заказы также удаляются (CASCADE)
+- При удалении услуги `service_id` устанавливается в NULL (SET NULL)
+- `total_amount` копируется из `services.base_price` при создании заказа
 - Автоматическое обновление `updated_at` через триггер
 
 ---
