@@ -25,18 +25,23 @@ async def create_order(
     Create a new order with payment processing.
 
     Args:
-        request: Order creation data
+        request: Order creation data (user_id, service_id, address_text, scheduled_at, notes)
         db: Database session
 
     Returns:
         Order response with order ID
 
     Raises:
-        HTTPException: If user doesn't exist or order creation fails
+        HTTPException: If user doesn't exist, service not found, or order creation fails
     """
     try:
         order_id = await order_service.create_order(
-            request.user_id, request.tariff_code, db
+            user_id=request.user_id,
+            service_id=request.service_id,
+            db=db,
+            address_text=request.address_text,
+            scheduled_at=request.scheduled_at,
+            notes=request.notes,
         )
         return OrderResponse(
             status="ok", order_id=order_id, message="Order created and payment processed"

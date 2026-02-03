@@ -6,6 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from nms.config import get_settings
 from nms.api.users import router as users_router
 from nms.api.orders import router as orders_router
+from nms.api.services import router as services_router
 from nms.api.admin.users import router as admin_users_router
 from nms.api.admin.orders import router as admin_orders_router, stats_router
 from nms.api.dependencies import get_api_key
@@ -45,6 +46,7 @@ app.add_middleware(
 # Include routers
 app.include_router(users_router)
 app.include_router(orders_router)
+app.include_router(services_router)
 
 # Include admin routers
 app.include_router(admin_users_router)
@@ -100,7 +102,12 @@ async def create_order_legacy(
     """Legacy endpoint - use /orders instead."""
     try:
         order_id = await order_service.create_order(
-            request.user_id, request.tariff_code, db
+            user_id=request.user_id,
+            service_id=request.service_id,
+            db=db,
+            address_text=request.address_text,
+            scheduled_at=request.scheduled_at,
+            notes=request.notes,
         )
         return OrderResponse(
             status="ok", order_id=order_id, message="Order created and payment processed"
