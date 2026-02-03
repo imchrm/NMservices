@@ -34,7 +34,7 @@ def test_register_wrong_auth(client: TestClient, wrong_api_key: str):
 
 def test_create_order_no_auth(client: TestClient):
     """Попытка создания заказа без заголовка X-API-Key"""
-    response = client.post("/create_order", json={"user_id": 1, "tariff_code": "standard_300"})
+    response = client.post("/create_order", json={"user_id": 1, "service_id": 1})
     assert response.status_code == 403
     assert response.json() == {"detail": "Could not validate credentials"}
 
@@ -68,10 +68,10 @@ def test_register_validation_error(client: TestClient, valid_api_key: str):
     assert response.status_code == 422  # Стандартный код ошибки валидации в FastAPI
 
 
-def test_create_order_success(client: TestClient, valid_api_key: str, test_user: int):
-    """Успешное создание заказа с реальным пользователем"""
+def test_create_order_success(client: TestClient, valid_api_key: str, test_user: int, test_service: int):
+    """Успешное создание заказа с реальным пользователем и услугой"""
     headers = {"X-API-Key": valid_api_key}
-    payload = {"user_id": test_user, "tariff_code": "standard_300"}
+    payload = {"user_id": test_user, "service_id": test_service}
 
     response = client.post("/create_order", json=payload, headers=headers)
 
@@ -82,10 +82,10 @@ def test_create_order_success(client: TestClient, valid_api_key: str, test_user:
     assert isinstance(data["order_id"], int)
 
 
-def test_create_order_nonexistent_user(client: TestClient, valid_api_key: str):
+def test_create_order_nonexistent_user(client: TestClient, valid_api_key: str, test_service: int):
     """Создание заказа для несуществующего пользователя"""
     headers = {"X-API-Key": valid_api_key}
-    payload = {"user_id": 99999, "tariff_code": "standard_300"}
+    payload = {"user_id": 99999, "service_id": test_service}
 
     response = client.post("/create_order", json=payload, headers=headers)
 
@@ -107,10 +107,10 @@ def test_create_order_validation_error(client: TestClient, valid_api_key: str):
 # --- 4. Тесты нового роутера /orders ---
 
 
-def test_orders_endpoint_success(client: TestClient, valid_api_key: str, test_user: int):
+def test_orders_endpoint_success(client: TestClient, valid_api_key: str, test_user: int, test_service: int):
     """Успешное создание заказа через новый эндпоинт /orders"""
     headers = {"X-API-Key": valid_api_key}
-    payload = {"user_id": test_user, "tariff_code": "premium_500"}
+    payload = {"user_id": test_user, "service_id": test_service}
 
     response = client.post("/orders", json=payload, headers=headers)
 
@@ -121,16 +121,45 @@ def test_orders_endpoint_success(client: TestClient, valid_api_key: str, test_us
     assert isinstance(data["order_id"], int)
 
 
-def test_orders_endpoint_nonexistent_user(client: TestClient, valid_api_key: str):
+def test_orders_endpoint_nonexistent_user(client: TestClient, valid_api_key: str, test_service: int):
     """Создание заказа через /orders для несуществующего пользователя"""
     headers = {"X-API-Key": valid_api_key}
-    payload = {"user_id": 88888, "tariff_code": "premium_500"}
+    payload = {"user_id": 88888, "service_id": test_service}
 
     response = client.post("/orders", json=payload, headers=headers)
 
     assert response.status_code == 400
     data = response.json()
     assert "User with ID 88888 does not exist" in data["detail"]
+
+
+def test_orders_endpoint_nonexistent_service(client: TestClient, valid_api_key: str, test_user: int):
+    """Создание заказа через /orders для несуществующей услуги"""
+    headers = {"X-API-Key": valid_api_key}
+    payload = {"user_id": test_user, "service_id": 99999}
+
+    response = client.post("/orders", json=payload, headers=headers)
+
+    assert response.status_code == 400
+    data = response.json()
+    assert "Service with ID 99999 not found" in data["detail"]
+
+
+def test_orders_endpoint_with_address(client: TestClient, valid_api_key: str, test_user: int, test_service: int):
+    """Создание заказа с адресом"""
+    headers = {"X-API-Key": valid_api_key}
+    payload = {
+        "user_id": test_user,
+        "service_id": test_service,
+        "address_text": "ул. Амира Темура, 100",
+    }
+
+    response = client.post("/orders", json=payload, headers=headers)
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["status"] == "ok"
+    assert data["order_id"] > 0
 
 
 # --- 5. Тесты telegram_id ---
