@@ -5,7 +5,7 @@
 ## Конфигурация
 
 ### Локальная сеть
-- **IP сервера**: `192.168.1.219` (ваш WiFi адрес)
+- **IP сервера**: `192.168.1.X` (IP адрес вашего компьютера в сети)
 - **Порт**: `8000`
 - **База данных**: PostgreSQL на `localhost:5432/nomus`
 
@@ -53,11 +53,12 @@ New-NetFirewallRule -DisplayName "NMservices API" -Direction Inbound -LocalPort 
 ## Шаг 2: Тестирование подключения
 
 ### Способ 1: Браузер (с той же машины)
-Откройте: http://192.168.1.219:8000/docs
+Откройте: http://localhost:8000/docs
 
 ### Способ 2: Curl (с другой машины в локальной сети)
 ```bash
-curl http://192.168.1.219:8000/
+# Замените 192.168.1.X на IP адрес сервера
+curl http://192.168.1.X:8000/
 ```
 
 Должен вернуть:
@@ -84,7 +85,7 @@ poetry run python scripts/test_registration.py
 
 Отредактируйте константы в `scripts/test_registration.py`:
 ```python
-API_BASE_URL = "http://192.168.1.219:8000"  # IP вашего сервера
+API_BASE_URL = "http://192.168.1.X:8000"    # IP вашего сервера (замените X на правильный IP)
 API_KEY = "test_secret"                      # Ваш API ключ
 TEST_PHONE = "+998901234567"                 # Тестовый номер
 ```
@@ -98,7 +99,8 @@ import httpx
 
 async def register_user_via_api(phone_number: str) -> dict:
     """Регистрирует пользователя через NMservices API."""
-    api_url = "http://192.168.1.219:8000/users/register"
+    # Замените на реальный IP адрес сервера
+    api_url = "http://192.168.1.X:8000/users/register"
     api_key = "test_secret"
 
     headers = {
@@ -127,7 +129,7 @@ print(f"User registered with ID: {user_id}")
 $headers = @{ "X-API-Key" = "test_secret" }
 $body = @{ phone_number = "+998901234567" } | ConvertTo-Json
 
-Invoke-RestMethod -Uri "http://192.168.1.219:8000/users/register" `
+Invoke-RestMethod -Uri "http://192.168.1.X:8000/users/register" `
     -Method Post `
     -Headers $headers `
     -ContentType "application/json" `
@@ -137,7 +139,7 @@ Invoke-RestMethod -Uri "http://192.168.1.219:8000/users/register" `
 ### Вариант D: Curl
 
 ```bash
-curl -X POST "http://192.168.1.219:8000/users/register" \
+curl -X POST "http://192.168.1.X:8000/users/register" \
   -H "X-API-Key: test_secret" \
   -H "Content-Type: application/json" \
   -d '{"phone_number": "+998901234567"}'
@@ -184,7 +186,7 @@ SELECT * FROM users WHERE phone_number = '+998901234567';
 **Решение:**
 1. Убедитесь, что сервер запущен на `0.0.0.0`, а не на `127.0.0.1`
 2. Проверьте файервол Windows
-3. Убедитесь, что используете правильный IP (192.168.1.219)
+3. Убедитесь, что используете правильный IP адрес сервера
 
 ### Проблема: 401 Unauthorized
 
@@ -217,7 +219,7 @@ poetry run python -c "import asyncio; from nms.database import init_db; asyncio.
 ┌─────────────────┐         ┌──────────────────┐         ┌─────────────┐
 │ Telegram Bot    │─────────▶│  NMservices API  │─────────▶│ PostgreSQL  │
 │ (NoMus)         │  HTTP    │  (FastAPI)       │  SQL     │  (nomus)    │
-│ 192.168.1.XXX   │          │  192.168.1.219   │          │  localhost  │
+│ 192.168.1.Y     │          │  192.168.1.X     │          │  localhost  │
 └─────────────────┘          │  :8000           │          │  :5432      │
                              └──────────────────┘          └─────────────┘
       ИЛИ                            ▲

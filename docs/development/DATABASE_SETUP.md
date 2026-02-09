@@ -98,12 +98,15 @@ poetry run uvicorn nms.main:app --reload --app-dir src
 |---------|-----|----------|
 | **id** | SERIAL | Первичный ключ, автоинкремент |
 | **phone_number** | VARCHAR(20) | Уникальный номер телефона |
+| **telegram_id** | BIGINT | Telegram ID пользователя (если есть) |
+| **language_code** | VARCHAR(10) | Код языка пользователя (например, 'ru', 'en') |
 | **created_at** | TIMESTAMP | Дата создания записи |
 | **updated_at** | TIMESTAMP | Дата последнего обновления |
 
 **Индексы:**
 - Primary key на `id`
 - Unique constraint на `phone_number`
+- Unique constraint на `telegram_id`
 - Index на `phone_number` для быстрого поиска
 
 **Триггеры:**

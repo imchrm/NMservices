@@ -26,11 +26,14 @@ services (1) ----< (N) order_items
 |----------|-----|-------------|----------|
 | `id` | SERIAL | PRIMARY KEY | Уникальный идентификатор пользователя |
 | `phone_number` | VARCHAR(20) | UNIQUE NOT NULL | Номер телефона (используется для авторизации) |
+| `telegram_id` | BIGINT | UNIQUE | Telegram ID пользователя |
+| `language_code` | VARCHAR(10) | - | Код языка пользователя (например, 'ru', 'en') |
 | `created_at` | TIMESTAMP | NOT NULL, DEFAULT CURRENT_TIMESTAMP | Дата и время регистрации |
 | `updated_at` | TIMESTAMP | NOT NULL, DEFAULT CURRENT_TIMESTAMP | Дата и время последнего обновления |
 
 **Индексы:**
 - `idx_users_phone_number` на поле `phone_number`
+- `idx_users_telegram_id` на поле `telegram_id`
 
 **Особенности:**
 - Автоматическое обновление `updated_at` через триггер
