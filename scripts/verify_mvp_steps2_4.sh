@@ -18,6 +18,7 @@ BOLD='\033[1m'
 
 DB_NAME="nomus"
 DB_USER="postgres"
+export PGPASSWORD="postgres"
 
 pass_count=0
 fail_count=0
