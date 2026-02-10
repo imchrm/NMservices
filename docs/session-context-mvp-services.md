@@ -77,7 +77,7 @@
 - Создан `tests/test_services.py` -- 13 тестов для services API
 - Обновлен `tests/test_main.py` -- использует `service_id` вместо `tariff_code`
 - Обновлен `tests/conftest.py` -- добавлена фикстура `test_service`
-- Обновлен `docs/database-schema-mvp.md` -- добавлены новые поля orders
+- Обновлен `docs/development/database-schema-mvp.md` -- добавлены новые поля orders
 
 ### Дополнительно
 **Коммит:** `chore: bump version to 0.6.0 for MVP release`
@@ -133,7 +133,7 @@ b43cfa8 chore: bump version to 0.6.0 for MVP release
 - `scripts/db_cli.py` -- добавлено меню услуг
 - `tests/conftest.py` -- добавлена фикстура test_service
 - `tests/test_main.py` -- обновлены тесты заказов
-- `docs/database-schema-mvp.md` -- обновлена документация
+- `docs/development/database-schema-mvp.md` -- обновлена документация
 - `pyproject.toml` -- версия 0.6.0
 
 ---
@@ -239,7 +239,8 @@ NMservices/
       MVP_PLAN.md
       MVP_services_table.md
       MVP+_extend_schema.md
-    database-schema-mvp.md
+    development/
+      database-schema-mvp.md
 ```
 
 ---
