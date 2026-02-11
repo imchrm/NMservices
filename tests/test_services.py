@@ -4,7 +4,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 
-# --- GET /services Tests ---
+# --- GET /services Tests (bot, X-API-Key) ---
 
 
 def test_get_services_empty(client: TestClient, valid_api_key: str):
@@ -44,7 +44,7 @@ def test_get_services_no_auth(client: TestClient):
     assert response.status_code == 403
 
 
-# --- GET /services/{id} Tests ---
+# --- GET /services/{id} Tests (bot, X-API-Key) ---
 
 
 def test_get_service_by_id_success(client: TestClient, valid_api_key: str, test_service: int):
@@ -68,127 +68,52 @@ def test_get_service_by_id_not_found(client: TestClient, valid_api_key: str):
     assert response.json()["detail"] == "Service not found"
 
 
-# --- POST /services Tests ---
+# --- /services write operations removed (security) ---
 
 
-def test_create_service_success(client: TestClient, valid_api_key: str):
-    """Create a new service."""
+def test_post_services_not_allowed(client: TestClient, valid_api_key: str):
+    """POST /services should return 405 (write ops moved to /admin/services)."""
     headers = {"X-API-Key": valid_api_key}
-    payload = {
-        "name": "New Massage",
-        "description": "A new massage service",
-        "base_price": 200000.00,
-        "duration_minutes": 90,
-        "is_active": True,
-    }
-
+    payload = {"name": "Should Fail"}
     response = client.post("/services", json=payload, headers=headers)
-
-    assert response.status_code == 201
-    data = response.json()
-    assert data["name"] == "New Massage"
-    assert data["description"] == "A new massage service"
-    assert float(data["base_price"]) == 200000.00
-    assert data["duration_minutes"] == 90
-    assert data["is_active"] is True
-    assert "id" in data
+    assert response.status_code == 405
 
 
-def test_create_service_minimal(client: TestClient, valid_api_key: str):
-    """Create service with only required fields."""
+def test_patch_services_not_allowed(client: TestClient, valid_api_key: str, test_service: int):
+    """PATCH /services/{id} should return 405 (write ops moved to /admin/services)."""
     headers = {"X-API-Key": valid_api_key}
-    payload = {"name": "Minimal Service"}
-
-    response = client.post("/services", json=payload, headers=headers)
-
-    assert response.status_code == 201
-    data = response.json()
-    assert data["name"] == "Minimal Service"
-    assert data["description"] is None
-    assert data["is_active"] is True  # Default value
-
-
-def test_create_service_validation_error(client: TestClient, valid_api_key: str):
-    """Create service without required name field."""
-    headers = {"X-API-Key": valid_api_key}
-    payload = {"description": "No name provided"}
-
-    response = client.post("/services", json=payload, headers=headers)
-
-    assert response.status_code == 422  # Validation error
-
-
-# --- PATCH /services/{id} Tests ---
-
-
-def test_update_service_success(client: TestClient, valid_api_key: str, test_service: int):
-    """Update service fields."""
-    headers = {"X-API-Key": valid_api_key}
-    payload = {"name": "Updated Massage", "base_price": 180000.00}
-
+    payload = {"name": "Should Fail"}
     response = client.patch(f"/services/{test_service}", json=payload, headers=headers)
-
-    assert response.status_code == 200
-    data = response.json()
-    assert data["name"] == "Updated Massage"
-    assert float(data["base_price"]) == 180000.00
+    assert response.status_code == 405
 
 
-def test_update_service_not_found(client: TestClient, valid_api_key: str):
-    """Update non-existent service."""
+def test_delete_services_not_allowed(client: TestClient, valid_api_key: str, test_service: int):
+    """DELETE /services/{id} should return 405 (write ops moved to /admin/services)."""
     headers = {"X-API-Key": valid_api_key}
-    payload = {"name": "New Name"}
-
-    response = client.patch("/services/99999", json=payload, headers=headers)
-
-    assert response.status_code == 404
-
-
-# --- DELETE /services/{id} Tests ---
-
-
-def test_deactivate_service_success(client: TestClient, valid_api_key: str, test_service: int):
-    """Deactivate (soft delete) a service."""
-    headers = {"X-API-Key": valid_api_key}
-
     response = client.delete(f"/services/{test_service}", headers=headers)
-
-    assert response.status_code == 204
-
-    # Verify service is deactivated
-    get_response = client.get(f"/services/{test_service}", headers=headers)
-    assert get_response.status_code == 200
-    assert get_response.json()["is_active"] is False
+    assert response.status_code == 405
 
 
-def test_deactivate_service_not_found(client: TestClient, valid_api_key: str):
-    """Deactivate non-existent service."""
-    headers = {"X-API-Key": valid_api_key}
-
-    response = client.delete("/services/99999", headers=headers)
-
-    assert response.status_code == 404
+# --- Filtering Tests (bot, X-API-Key) ---
 
 
-# --- Filtering Tests ---
-
-
-def test_get_services_include_inactive(client: TestClient, valid_api_key: str, test_service: int):
+def test_get_services_include_inactive(client: TestClient, valid_admin_key: str, valid_api_key: str, test_service: int):
     """Test include_inactive filter."""
-    headers = {"X-API-Key": valid_api_key}
+    admin_headers = {"X-Admin-Key": valid_admin_key}
+    api_headers = {"X-API-Key": valid_api_key}
 
-    # First deactivate the service
-    client.delete(f"/services/{test_service}", headers=headers)
+    # Deactivate the service via admin endpoint
+    client.delete(f"/admin/services/{test_service}", headers=admin_headers)
 
     # Without include_inactive - should be empty
-    response = client.get("/services", headers=headers)
+    response = client.get("/services", headers=api_headers)
     assert response.status_code == 200
     data = response.json()
     service_ids = [s["id"] for s in data["services"]]
     assert test_service not in service_ids
 
     # With include_inactive=true - should include the service
-    response = client.get("/services?include_inactive=true", headers=headers)
+    response = client.get("/services?include_inactive=true", headers=api_headers)
     assert response.status_code == 200
     data = response.json()
     service_ids = [s["id"] for s in data["services"]]

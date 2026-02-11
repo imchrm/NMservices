@@ -9,6 +9,7 @@ from nms.api.orders import router as orders_router
 from nms.api.services import router as services_router
 from nms.api.admin.users import router as admin_users_router
 from nms.api.admin.orders import router as admin_orders_router, stats_router
+from nms.api.admin.services import router as admin_services_router
 from nms.api.dependencies import get_api_key
 from nms.models import (
     UserRegistrationRequest,
@@ -51,6 +52,7 @@ app.include_router(services_router)
 # Include admin routers
 app.include_router(admin_users_router)
 app.include_router(admin_orders_router)
+app.include_router(admin_services_router)
 app.include_router(stats_router)
 
 # Service instances for legacy endpoints
