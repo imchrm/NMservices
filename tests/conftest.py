@@ -73,6 +73,12 @@ def valid_api_key() -> str:
 
 
 @pytest.fixture
+def valid_admin_key() -> str:
+    """Return valid admin API key for tests."""
+    return settings.admin_secret_key
+
+
+@pytest.fixture
 def wrong_api_key() -> str:
     """Return invalid API key for tests."""
     return "wrong_password"
