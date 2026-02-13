@@ -110,7 +110,8 @@ class AdminOrderListResponse(BaseModel):
 # Statistics models
 class AdminStatsResponse(BaseModel):
     """Response model for database statistics."""
-    
+
     total_users: int
     total_orders: int
+    total_services: int
     orders_by_status: dict[str, int]

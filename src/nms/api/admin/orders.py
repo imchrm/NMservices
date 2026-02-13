@@ -1,14 +1,15 @@
 """Admin API endpoints for order management."""
 
 import logging
-from typing import Literal
+from datetime import datetime
+from typing import Literal, Optional
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
 from sqlalchemy.orm import selectinload
 
 from nms.database import get_db
-from nms.models.db_models import User, Order
+from nms.models.db_models import User, Order, Service
 from nms.models.admin import (
     AdminOrderResponse,
     AdminOrderWithUserResponse,
@@ -40,6 +41,14 @@ async def list_orders(
         default="desc",
         description="Sort order (ascending or descending)"
     ),
+    date_from: Optional[datetime] = Query(
+        default=None,
+        description="Filter by created_at >= date_from (ISO 8601)"
+    ),
+    date_to: Optional[datetime] = Query(
+        default=None,
+        description="Filter by created_at <= date_to (ISO 8601)"
+    ),
     db: AsyncSession = Depends(get_db)
 ):
     """
@@ -51,6 +60,8 @@ async def list_orders(
         status_filter: Optional status filter (e.g., 'pending', 'completed')
         sort_by: Field to sort by (id, user_id, status, total_amount, created_at, updated_at)
         order: Sort order (asc or desc)
+        date_from: Optional start of date range filter (inclusive)
+        date_to: Optional end of date range filter (inclusive)
         db: Database session
 
     Returns:
@@ -80,11 +91,19 @@ async def list_orders(
 
         if status_filter:
             query = query.where(Order.status == status_filter)
+        if date_from is not None:
+            query = query.where(Order.created_at >= date_from)
+        if date_to is not None:
+            query = query.where(Order.created_at <= date_to)
 
         # Get total count
         count_query = select(func.count(Order.id))
         if status_filter:
             count_query = count_query.where(Order.status == status_filter)
+        if date_from is not None:
+            count_query = count_query.where(Order.created_at >= date_from)
+        if date_to is not None:
+            count_query = count_query.where(Order.created_at <= date_to)
 
         count_result = await db.execute(count_query)
         total = count_result.scalar_one()
@@ -326,6 +345,12 @@ async def get_stats(db: AsyncSession = Depends(get_db)):
         orders_count = await db.execute(select(func.count(Order.id)))
         total_orders = orders_count.scalar_one()
 
+        # Total active services
+        services_count = await db.execute(
+            select(func.count(Service.id)).where(Service.is_active == True)
+        )
+        total_services = services_count.scalar_one()
+
         # Orders by status
         status_result = await db.execute(
             select(Order.status, func.count(Order.id))
@@ -336,6 +361,7 @@ async def get_stats(db: AsyncSession = Depends(get_db)):
         return AdminStatsResponse(
             total_users=total_users,
             total_orders=total_orders,
+            total_services=total_services,
             orders_by_status=orders_by_status
         )
     except Exception as e:

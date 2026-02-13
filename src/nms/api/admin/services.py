@@ -1,7 +1,8 @@
 """Admin API endpoints for service management."""
 
 import logging
-from typing import Literal
+from datetime import datetime
+from typing import Literal, Optional
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
@@ -32,6 +33,14 @@ async def list_services(
     order: Literal["asc", "desc"] = Query(
         default="asc",
         description="Sort order (ascending or descending)"
+    ),
+    date_from: Optional[datetime] = Query(
+        default=None,
+        description="Filter by created_at >= date_from (ISO 8601)"
+    ),
+    date_to: Optional[datetime] = Query(
+        default=None,
+        description="Filter by created_at <= date_to (ISO 8601)"
     ),
     db: AsyncSession = Depends(get_db),
 ) -> ServiceListResponse:
@@ -68,10 +77,18 @@ async def list_services(
 
         if not include_inactive:
             query = query.where(Service.is_active == True)
+        if date_from is not None:
+            query = query.where(Service.created_at >= date_from)
+        if date_to is not None:
+            query = query.where(Service.created_at <= date_to)
 
         count_query = select(func.count(Service.id))
         if not include_inactive:
             count_query = count_query.where(Service.is_active == True)
+        if date_from is not None:
+            count_query = count_query.where(Service.created_at >= date_from)
+        if date_to is not None:
+            count_query = count_query.where(Service.created_at <= date_to)
 
         count_result = await db.execute(count_query)
         total = count_result.scalar_one()

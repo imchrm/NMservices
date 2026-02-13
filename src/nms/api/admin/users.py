@@ -1,7 +1,8 @@
 """Admin API endpoints for user management."""
 
 import logging
-from typing import Literal
+from datetime import datetime
+from typing import Literal, Optional
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
@@ -34,6 +35,14 @@ async def list_users(
         default="asc",
         description="Sort order (ascending or descending)"
     ),
+    date_from: Optional[datetime] = Query(
+        default=None,
+        description="Filter by created_at >= date_from (ISO 8601)"
+    ),
+    date_to: Optional[datetime] = Query(
+        default=None,
+        description="Filter by created_at <= date_to (ISO 8601)"
+    ),
     db: AsyncSession = Depends(get_db)
 ):
     """
@@ -44,6 +53,8 @@ async def list_users(
         limit: Maximum number of records to return
         sort_by: Field to sort by (id, phone_number, created_at, updated_at)
         order: Sort order (asc or desc)
+        date_from: Optional start of date range filter (inclusive)
+        date_to: Optional end of date range filter (inclusive)
         db: Database session
 
     Returns:
@@ -51,7 +62,12 @@ async def list_users(
     """
     try:
         # Get total count
-        count_result = await db.execute(select(func.count(User.id)))
+        count_query = select(func.count(User.id))
+        if date_from is not None:
+            count_query = count_query.where(User.created_at >= date_from)
+        if date_to is not None:
+            count_query = count_query.where(User.created_at <= date_to)
+        count_result = await db.execute(count_query)
         total = count_result.scalar_one()
 
         # Map sort_by to actual column
@@ -70,10 +86,14 @@ async def list_users(
         else:
             order_clause = sort_column.asc()
 
-        # Get users with sorting
+        # Get users with sorting and date filtering
+        users_query = select(User).order_by(order_clause)
+        if date_from is not None:
+            users_query = users_query.where(User.created_at >= date_from)
+        if date_to is not None:
+            users_query = users_query.where(User.created_at <= date_to)
         result = await db.execute(
-            select(User)
-            .order_by(order_clause)
+            users_query
             .offset(skip)
             .limit(limit)
         )
