@@ -49,6 +49,10 @@ async def list_orders(
         default=None,
         description="Filter by created_at <= date_to (ISO 8601)"
     ),
+    user_id: Optional[int] = Query(
+        default=None,
+        description="Filter by user ID"
+    ),
     db: AsyncSession = Depends(get_db)
 ):
     """
@@ -97,6 +101,8 @@ async def list_orders(
             query = query.where(Order.created_at >= date_from)
         if date_to is not None:
             query = query.where(Order.created_at <= date_to)
+        if user_id is not None:
+            query = query.where(Order.user_id == user_id)
 
         # Get total count
         count_query = select(func.count(Order.id))
@@ -106,6 +112,8 @@ async def list_orders(
             count_query = count_query.where(Order.created_at >= date_from)
         if date_to is not None:
             count_query = count_query.where(Order.created_at <= date_to)
+        if user_id is not None:
+            count_query = count_query.where(Order.user_id == user_id)
 
         count_result = await db.execute(count_query)
         total = count_result.scalar_one()
