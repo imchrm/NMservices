@@ -26,7 +26,7 @@ async def list_services(
     skip: int = 0,
     limit: int = 100,
     include_inactive: bool = Query(True, description="Include inactive services"),
-    sort_by: Literal["id", "name", "base_price", "is_active"] = Query(
+    sort_by: Literal["id", "name", "base_price", "duration_minutes", "is_active", "created_at"] = Query(
         default="id",
         description="Field to sort by"
     ),
@@ -63,7 +63,9 @@ async def list_services(
             "id": Service.id,
             "name": Service.name,
             "base_price": Service.base_price,
+            "duration_minutes": Service.duration_minutes,
             "is_active": Service.is_active,
+            "created_at": Service.created_at,
         }
 
         sort_column = sort_columns[sort_by]
