@@ -3,7 +3,7 @@
 from datetime import datetime
 from decimal import Decimal
 from typing import Optional
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 
 
 # User models
@@ -54,49 +54,59 @@ class AdminUserListResponse(BaseModel):
 # Order models
 class AdminOrderResponse(BaseModel):
     """Response model for order details."""
-    
+
     id: int
     user_id: int
+    service_id: Optional[int] = None
     status: str
-    total_amount: Optional[Decimal]
-    notes: Optional[str]
+    total_amount: Optional[Decimal] = None
+    address_text: Optional[str] = None
+    scheduled_at: Optional[datetime] = None
+    notes: Optional[str] = None
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class AdminOrderWithUserResponse(BaseModel):
     """Response model for order with user details."""
-    
+
     id: int
     user_id: int
+    service_id: Optional[int] = None
     status: str
-    total_amount: Optional[Decimal]
-    notes: Optional[str]
+    total_amount: Optional[Decimal] = None
+    address_text: Optional[str] = None
+    scheduled_at: Optional[datetime] = None
+    notes: Optional[str] = None
     created_at: datetime
     updated_at: datetime
     user: AdminUserResponse
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class AdminOrderCreateRequest(BaseModel):
     """Request model for creating an order."""
-    
+
     user_id: int = Field(..., description="User ID")
+    service_id: Optional[int] = Field(None, description="Service ID")
     status: str = Field(default="pending", description="Order status")
     total_amount: Optional[Decimal] = Field(None, description="Total amount")
+    address_text: Optional[str] = Field(None, description="Delivery address")
+    scheduled_at: Optional[datetime] = Field(None, description="Scheduled date/time")
     notes: Optional[str] = Field(None, description="Order notes")
 
 
 class AdminOrderUpdateRequest(BaseModel):
     """Request model for updating an order."""
-    
+
+    service_id: Optional[int] = Field(None, description="Service ID")
     status: Optional[str] = Field(None, description="Order status")
     total_amount: Optional[Decimal] = Field(None, description="Total amount")
+    address_text: Optional[str] = Field(None, description="Delivery address")
+    scheduled_at: Optional[datetime] = Field(None, description="Scheduled date/time")
     notes: Optional[str] = Field(None, description="Order notes")
 
 
