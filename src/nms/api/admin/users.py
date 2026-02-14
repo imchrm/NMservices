@@ -5,7 +5,7 @@ from datetime import datetime
 from typing import Literal, Optional
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func
+from sqlalchemy import select, func, cast, String
 from sqlalchemy.orm import selectinload
 
 from nms.database import get_db
@@ -45,7 +45,7 @@ async def list_users(
     ),
     q: Optional[str] = Query(
         default=None,
-        description="Search by phone number (contains)"
+        description="Search by user ID (starts with)"
     ),
     db: AsyncSession = Depends(get_db)
 ):
@@ -72,7 +72,7 @@ async def list_users(
         if date_to is not None:
             count_query = count_query.where(User.created_at <= date_to)
         if q is not None:
-            count_query = count_query.where(User.phone_number.contains(q))
+            count_query = count_query.where(cast(User.id, String).startswith(q))
         count_result = await db.execute(count_query)
         total = count_result.scalar_one()
 
@@ -101,7 +101,7 @@ async def list_users(
         if date_to is not None:
             users_query = users_query.where(User.created_at <= date_to)
         if q is not None:
-            users_query = users_query.where(User.phone_number.contains(q))
+            users_query = users_query.where(cast(User.id, String).startswith(q))
         result = await db.execute(
             users_query
             .offset(skip)
