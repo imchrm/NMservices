@@ -152,11 +152,23 @@ async def create_order(
                 detail=f"User with ID {request.user_id} does not exist"
             )
 
+        # Verify service exists if provided
+        if request.service_id is not None:
+            svc_result = await db.execute(select(Service).where(Service.id == request.service_id))
+            if not svc_result.scalar_one_or_none():
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"Service with ID {request.service_id} does not exist"
+                )
+
         # Create new order
         new_order = Order(
             user_id=request.user_id,
+            service_id=request.service_id,
             status=request.status,
             total_amount=request.total_amount,
+            address_text=request.address_text,
+            scheduled_at=request.scheduled_at,
             notes=request.notes
         )
         db.add(new_order)
@@ -209,8 +221,11 @@ async def get_order(
         return AdminOrderWithUserResponse(
             id=order.id,
             user_id=order.user_id,
+            service_id=order.service_id,
             status=order.status,
             total_amount=order.total_amount,
+            address_text=order.address_text,
+            scheduled_at=order.scheduled_at,
             notes=order.notes,
             created_at=order.created_at,
             updated_at=order.updated_at,
@@ -253,11 +268,26 @@ async def update_order(
                 detail=f"Order with ID {order_id} not found"
             )
 
+        # Verify service exists if provided
+        if request.service_id is not None:
+            svc_result = await db.execute(select(Service).where(Service.id == request.service_id))
+            if not svc_result.scalar_one_or_none():
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"Service with ID {request.service_id} does not exist"
+                )
+
         # Update fields if provided
+        if request.service_id is not None:
+            order.service_id = request.service_id
         if request.status is not None:
             order.status = request.status
         if request.total_amount is not None:
             order.total_amount = request.total_amount
+        if request.address_text is not None:
+            order.address_text = request.address_text
+        if request.scheduled_at is not None:
+            order.scheduled_at = request.scheduled_at
         if request.notes is not None:
             order.notes = request.notes
 
