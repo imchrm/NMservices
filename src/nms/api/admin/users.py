@@ -27,7 +27,7 @@ router = APIRouter(prefix="/admin/users", tags=["admin-users"])
 async def list_users(
     skip: int = 0,
     limit: int = 100,
-    sort_by: Literal["id", "phone_number", "created_at", "updated_at"] = Query(
+    sort_by: Literal["id", "phone_number", "telegram_id", "language_code", "created_at", "updated_at"] = Query(
         default="id",
         description="Field to sort by"
     ),
@@ -74,6 +74,8 @@ async def list_users(
         sort_columns = {
             "id": User.id,
             "phone_number": User.phone_number,
+            "telegram_id": User.telegram_id,
+            "language_code": User.language_code,
             "created_at": User.created_at,
             "updated_at": User.updated_at,
         }

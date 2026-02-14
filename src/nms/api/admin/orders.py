@@ -33,7 +33,7 @@ async def list_orders(
         default=None,
         description="Filter by order status (e.g., 'pending', 'completed')"
     ),
-    sort_by: Literal["id", "user_id", "status", "total_amount", "created_at", "updated_at"] = Query(
+    sort_by: Literal["id", "user_id", "status", "total_amount", "address_text", "scheduled_at", "created_at", "updated_at"] = Query(
         default="created_at",
         description="Field to sort by"
     ),
@@ -74,6 +74,8 @@ async def list_orders(
             "user_id": Order.user_id,
             "status": Order.status,
             "total_amount": Order.total_amount,
+            "address_text": Order.address_text,
+            "scheduled_at": Order.scheduled_at,
             "created_at": Order.created_at,
             "updated_at": Order.updated_at,
         }
