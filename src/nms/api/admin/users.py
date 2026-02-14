@@ -43,6 +43,10 @@ async def list_users(
         default=None,
         description="Filter by created_at <= date_to (ISO 8601)"
     ),
+    q: Optional[str] = Query(
+        default=None,
+        description="Search by phone number (contains)"
+    ),
     db: AsyncSession = Depends(get_db)
 ):
     """
@@ -67,6 +71,8 @@ async def list_users(
             count_query = count_query.where(User.created_at >= date_from)
         if date_to is not None:
             count_query = count_query.where(User.created_at <= date_to)
+        if q is not None:
+            count_query = count_query.where(User.phone_number.contains(q))
         count_result = await db.execute(count_query)
         total = count_result.scalar_one()
 
@@ -94,6 +100,8 @@ async def list_users(
             users_query = users_query.where(User.created_at >= date_from)
         if date_to is not None:
             users_query = users_query.where(User.created_at <= date_to)
+        if q is not None:
+            users_query = users_query.where(User.phone_number.contains(q))
         result = await db.execute(
             users_query
             .offset(skip)
