@@ -1,9 +1,20 @@
 """Database ORM models."""
 
 from datetime import datetime
+from enum import Enum as PyEnum
 from sqlalchemy import Column, String, DateTime, Integer, ForeignKey, DECIMAL, Text, BigInteger, Boolean
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from nms.database import Base
+
+
+class OrderStatus(str, PyEnum):
+    """Valid order statuses."""
+
+    PENDING = "pending"
+    CONFIRMED = "confirmed"
+    IN_PROGRESS = "in_progress"
+    COMPLETED = "completed"
+    CANCELLED = "cancelled"
 
 
 class User(Base):
@@ -60,7 +71,8 @@ class Order(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
     service_id = Column(Integer, ForeignKey("services.id", ondelete="SET NULL"), nullable=True, index=True)
-    status: Mapped[str] = mapped_column(String(50), nullable=False, default="pending", index=True)
+    status: Mapped[str] = mapped_column(String(50), nullable=False, default=OrderStatus.PENDING, index=True)
+    notified_status = Column(String(50), nullable=True, default=None)
     total_amount = Column(DECIMAL(10, 2), nullable=True)
     address_text = Column(Text, nullable=True)
     scheduled_at = Column(DateTime, nullable=True)

@@ -85,11 +85,13 @@ class OrderService:
             log.error(f"User with ID {user_id} not found")
             raise ValueError(f"User with ID {user_id} does not exist")
 
-        # Create new order
+        # Create new order (notified_status = "pending" because user sees
+        # confirmation in the bot immediately after placing the order)
         new_order = Order(
             user_id=user_id,
             service_id=service_id,
             status="pending",
+            notified_status="pending",
             total_amount=amount,
             address_text=address_text,
             scheduled_at=scheduled_at,

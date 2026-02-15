@@ -9,7 +9,9 @@ from sqlalchemy import select, func
 from sqlalchemy.orm import selectinload
 
 from nms.database import get_db
-from nms.models.db_models import User, Order, Service
+from nms.models.db_models import User, Order, Service, OrderStatus
+from nms.config import get_settings
+from nms.services.telegram_notifier import TelegramNotifier
 from nms.models.admin import (
     AdminOrderResponse,
     AdminOrderWithUserResponse,
@@ -285,6 +287,18 @@ async def update_order(
                     detail=f"Service with ID {request.service_id} does not exist"
                 )
 
+        # Validate status if provided
+        valid_statuses = {s.value for s in OrderStatus}
+        if request.status is not None and request.status not in valid_statuses:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Invalid status '{request.status}'. Valid: {sorted(valid_statuses)}",
+            )
+
+        # Track status change for notification
+        old_status = order.status
+        new_status = request.status
+
         # Update fields if provided
         if request.service_id is not None:
             order.service_id = request.service_id
@@ -303,6 +317,10 @@ async def update_order(
         await db.refresh(order)
 
         log.info(f"[ADMIN] Order {order_id} updated")
+
+        # Send Telegram notification if status changed
+        if new_status and new_status != old_status:
+            await _notify_status_change(order, db)
 
         return AdminOrderResponse.model_validate(order)
     except HTTPException:
@@ -359,6 +377,48 @@ async def delete_order(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to delete order"
         ) from e
+
+
+async def _notify_status_change(order: Order, db: AsyncSession) -> None:
+    """Send Telegram push notification about order status change."""
+    try:
+        # Load user and service for notification details
+        user_result = await db.execute(
+            select(User).where(User.id == order.user_id)
+        )
+        user = user_result.scalar_one_or_none()
+        if not user or not user.telegram_id:
+            log.info("[ADMIN] No telegram_id for user %s, skipping push", order.user_id)
+            return
+
+        svc_result = await db.execute(
+            select(Service).where(Service.id == order.service_id)
+        )
+        service = svc_result.scalar_one_or_none()
+        service_name = service.name if service else "—"
+
+        settings = get_settings()
+        notifier = TelegramNotifier(settings.telegram_bot_token)
+        delivered = await notifier.notify_order_status(
+            telegram_id=user.telegram_id,
+            order_id=order.id,
+            service_name=service_name,
+            total_amount=order.total_amount,
+            new_status=order.status,
+            language_code=user.language_code,
+        )
+
+        if delivered:
+            order.notified_status = order.status
+            await db.commit()
+            log.info("[ADMIN] Push notification delivered for order #%s", order.id)
+        else:
+            log.info(
+                "[ADMIN] Push failed for order #%s, user will be notified on next visit",
+                order.id,
+            )
+    except Exception as e:
+        log.error("[ADMIN] Notification error for order #%s: %s", order.id, e)
 
 
 # Statistics endpoint

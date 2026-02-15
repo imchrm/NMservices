@@ -41,6 +41,9 @@ class Settings(BaseSettings):
         alias="DATABASE_URL",
     )
 
+    # Telegram Bot (for sending notifications to users)
+    telegram_bot_token: str = Field(default="", alias="TELEGRAM_BOT_TOKEN")
+
     # CORS (Cross-Origin Resource Sharing)
     cors_origins: list[str] = Field(
         default=["http://localhost:5173"],  # Vite dev server
