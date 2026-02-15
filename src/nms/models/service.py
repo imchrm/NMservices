@@ -14,6 +14,8 @@ class ServiceResponse(BaseModel):
     base_price: Decimal | None = None
     duration_minutes: int | None = None
     is_active: bool
+    created_at: datetime
+    updated_at: datetime
 
     model_config = {"from_attributes": True}
 
