@@ -69,6 +69,86 @@ async def create_order(
         ) from e
 
 
+# ─── Active order endpoint ───────────────────────────────────────────
+
+_ACTIVE_STATUSES = {"pending", "confirmed", "in_progress"}
+
+
+class ActiveOrderResponse(BaseModel):
+    """Response for active order lookup."""
+
+    has_active_order: bool
+    order: Optional["ActiveOrderDetail"] = None
+
+
+class ActiveOrderDetail(BaseModel):
+    order_id: int
+    service_name: Optional[str] = None
+    total_amount: Optional[Decimal] = None
+    address_text: Optional[str] = None
+    status: str
+    created_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+@router.get(
+    "/active",
+    response_model=ActiveOrderResponse,
+    dependencies=[Depends(get_api_key)],
+    summary="Get user's active order (if any)",
+)
+async def get_active_order(
+    telegram_id: int = Query(..., description="User's Telegram ID"),
+    db: AsyncSession = Depends(get_db),
+) -> ActiveOrderResponse:
+    """
+    Returns the most recent active order for the user.
+
+    Active = status in (pending, confirmed, in_progress).
+    """
+    try:
+        user_result = await db.execute(
+            select(User).where(User.telegram_id == telegram_id)
+        )
+        user = user_result.scalar_one_or_none()
+        if not user:
+            return ActiveOrderResponse(has_active_order=False)
+
+        result = await db.execute(
+            select(Order, Service.name.label("service_name"))
+            .outerjoin(Service, Order.service_id == Service.id)
+            .where(
+                Order.user_id == user.id,
+                Order.status.in_(_ACTIVE_STATUSES),
+            )
+            .order_by(Order.created_at.desc())
+            .limit(1)
+        )
+        row = result.first()
+        if not row:
+            return ActiveOrderResponse(has_active_order=False)
+
+        order, svc_name = row
+        return ActiveOrderResponse(
+            has_active_order=True,
+            order=ActiveOrderDetail(
+                order_id=order.id,
+                service_name=svc_name,
+                total_amount=order.total_amount,
+                address_text=order.address_text,
+                status=order.status,
+                created_at=order.created_at,
+            ),
+        )
+    except Exception as e:
+        log.error("Error fetching active order: %s", e)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to fetch active order",
+        ) from e
+
+
 # ─── Notification endpoints ──────────────────────────────────────────
 
 
