@@ -74,13 +74,6 @@ async def create_order(
 _ACTIVE_STATUSES = {"pending", "confirmed", "in_progress"}
 
 
-class ActiveOrderResponse(BaseModel):
-    """Response for active order lookup."""
-
-    has_active_order: bool
-    order: Optional["ActiveOrderDetail"] = None
-
-
 class ActiveOrderDetail(BaseModel):
     order_id: int
     service_name: Optional[str] = None
@@ -92,18 +85,24 @@ class ActiveOrderDetail(BaseModel):
     model_config = {"from_attributes": True}
 
 
+class ActiveOrdersResponse(BaseModel):
+    """Response for active orders lookup."""
+
+    orders: list[ActiveOrderDetail] = []
+
+
 @router.get(
     "/active",
-    response_model=ActiveOrderResponse,
+    response_model=ActiveOrdersResponse,
     dependencies=[Depends(get_api_key)],
-    summary="Get user's active order (if any)",
+    summary="Get user's active orders",
 )
-async def get_active_order(
+async def get_active_orders(
     telegram_id: int = Query(..., description="User's Telegram ID"),
     db: AsyncSession = Depends(get_db),
-) -> ActiveOrderResponse:
+) -> ActiveOrdersResponse:
     """
-    Returns the most recent active order for the user.
+    Returns all active orders for the user.
 
     Active = status in (pending, confirmed, in_progress).
     """
@@ -113,7 +112,7 @@ async def get_active_order(
         )
         user = user_result.scalar_one_or_none()
         if not user:
-            return ActiveOrderResponse(has_active_order=False)
+            return ActiveOrdersResponse()
 
         result = await db.execute(
             select(Order, Service.name.label("service_name"))
@@ -123,29 +122,28 @@ async def get_active_order(
                 Order.status.in_(_ACTIVE_STATUSES),
             )
             .order_by(Order.created_at.desc())
-            .limit(1)
         )
-        row = result.first()
-        if not row:
-            return ActiveOrderResponse(has_active_order=False)
+        rows = result.all()
+        if not rows:
+            return ActiveOrdersResponse()
 
-        order, svc_name = row
-        return ActiveOrderResponse(
-            has_active_order=True,
-            order=ActiveOrderDetail(
+        orders = [
+            ActiveOrderDetail(
                 order_id=order.id,
                 service_name=svc_name,
                 total_amount=order.total_amount,
                 address_text=order.address_text,
                 status=order.status,
                 created_at=order.created_at,
-            ),
-        )
+            )
+            for order, svc_name in rows
+        ]
+        return ActiveOrdersResponse(orders=orders)
     except Exception as e:
-        log.error("Error fetching active order: %s", e)
+        log.error("Error fetching active orders: %s", e)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to fetch active order",
+            detail="Failed to fetch active orders",
         ) from e
 
 
