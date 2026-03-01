@@ -1,7 +1,8 @@
 """Configuration module for NMservices."""
 
+import json
 from functools import lru_cache
-from pydantic import Field, BaseModel   
+from pydantic import Field, BaseModel, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class LoggingConfig(BaseModel):
@@ -49,6 +50,21 @@ class Settings(BaseSettings):
         default=["http://localhost:5173"],  # Vite dev server
         alias="CORS_ORIGINS",
     )
+
+    @field_validator("cors_origins", mode="before")
+    @classmethod
+    def parse_cors_origins(cls, v):
+        if isinstance(v, str):
+            if not v.strip():
+                return ["http://localhost:5173"]
+            try:
+                parsed = json.loads(v)
+                if isinstance(parsed, list):
+                    return parsed
+            except (json.JSONDecodeError, TypeError):
+                pass
+            return [s.strip() for s in v.split(",") if s.strip()]
+        return v
 
 
 @lru_cache
