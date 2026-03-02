@@ -46,7 +46,9 @@ class Settings(BaseSettings):
     telegram_bot_token: str = Field(default="", alias="TELEGRAM_BOT_TOKEN")
 
     # CORS (Cross-Origin Resource Sharing)
-    cors_origins: list[str] = Field(
+    # Type is str | list[str] so pydantic-settings won't force json.loads()
+    # on plain string values like "*" or "https://example.com"
+    cors_origins: str | list[str] = Field(
         default=["http://localhost:5173"],  # Vite dev server
         alias="CORS_ORIGINS",
     )
@@ -57,6 +59,8 @@ class Settings(BaseSettings):
         if isinstance(v, str):
             if not v.strip():
                 return ["http://localhost:5173"]
+            if v.strip() == "*":
+                return ["*"]
             try:
                 parsed = json.loads(v)
                 if isinstance(parsed, list):
