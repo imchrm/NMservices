@@ -1,7 +1,6 @@
 """initial_schema
 
-Baseline migration for existing database.
-Tables 'users' and 'orders' already exist.
+Create initial users and orders tables.
 
 Revision ID: 6f83ab8ac77e
 Revises:
@@ -22,12 +21,32 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    """Baseline migration - tables already exist in DB."""
-    # Existing tables: users, orders
-    # This migration marks the starting point for Alembic tracking
-    pass
+    """Create initial users and orders tables."""
+    op.create_table(
+        'users',
+        sa.Column('id', sa.Integer(), primary_key=True),
+        sa.Column('phone_number', sa.String(20), nullable=False),
+        sa.Column('created_at', sa.DateTime(), nullable=False, server_default=sa.func.now()),
+        sa.Column('updated_at', sa.DateTime(), nullable=False, server_default=sa.func.now()),
+    )
+    op.create_index('ix_users_phone_number', 'users', ['phone_number'], unique=True)
+
+    op.create_table(
+        'orders',
+        sa.Column('id', sa.Integer(), primary_key=True),
+        sa.Column('user_id', sa.Integer(), sa.ForeignKey('users.id', ondelete='CASCADE'), nullable=False),
+        sa.Column('status', sa.String(50), nullable=False, server_default='pending'),
+        sa.Column('total_amount', sa.DECIMAL(10, 2), nullable=True),
+        sa.Column('notes', sa.Text(), nullable=True),
+        sa.Column('created_at', sa.DateTime(), nullable=False, server_default=sa.func.now()),
+        sa.Column('updated_at', sa.DateTime(), nullable=False, server_default=sa.func.now()),
+    )
+    op.create_index('idx_orders_user_id', 'orders', ['user_id'])
+    op.create_index('idx_orders_status', 'orders', ['status'])
+    op.create_index('idx_orders_created_at', 'orders', ['created_at'])
 
 
 def downgrade() -> None:
-    """Cannot downgrade baseline migration."""
-    pass
+    """Drop orders and users tables."""
+    op.drop_table('orders')
+    op.drop_table('users')
