@@ -1,7 +1,5 @@
 """add_telegram_id_to_users
 
-Add telegram_id column to users table for Telegram user identification.
-
 Revision ID: 5f637e23bc5d
 Revises: 6f83ab8ac77e
 Create Date: 2026-01-28 20:53:55.425961
@@ -21,12 +19,10 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    """Add telegram_id column with unique index."""
-    op.add_column('users', sa.Column('telegram_id', sa.BigInteger(), nullable=True))
-    op.create_index('ix_users_telegram_id', 'users', ['telegram_id'], unique=True)
+    """No-op: telegram_id already created in initial_schema."""
+    pass
 
 
 def downgrade() -> None:
-    """Remove telegram_id column and index."""
-    op.drop_index('ix_users_telegram_id', table_name='users')
-    op.drop_column('users', 'telegram_id')
+    """No-op."""
+    pass
