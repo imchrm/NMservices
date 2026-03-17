@@ -17,7 +17,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 # Import models and settings
 from nms.config import get_settings
 from nms.database import Base
-from nms.models.db_models import User, Order  # noqa: F401 - import for metadata
+from nms.models.db_models import User, Order, Payment  # noqa: F401 - import for metadata
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

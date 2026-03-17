@@ -1,12 +1,16 @@
 """Main application entry point for NMservices."""
 import logging
+from pathlib import Path
 
 from fastapi import FastAPI, Depends, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from nms.config import get_settings
 from nms.api.users import router as users_router
 from nms.api.orders import router as orders_router
 from nms.api.services import router as services_router
+from nms.api.payment import router as payment_router
+from nms.api.webhooks import router as webhooks_router
 from nms.api.admin.users import router as admin_users_router
 from nms.api.admin.orders import router as admin_orders_router, stats_router
 from nms.api.admin.services import router as admin_services_router
@@ -44,10 +48,17 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Mount static files
+static_dir = Path(__file__).resolve().parent / "static"
+if static_dir.exists():
+    app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
+
 # Include routers
 app.include_router(users_router)
 app.include_router(orders_router)
 app.include_router(services_router)
+app.include_router(payment_router)
+app.include_router(webhooks_router)
 
 # Include admin routers
 app.include_router(admin_users_router)

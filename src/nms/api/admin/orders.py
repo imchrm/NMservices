@@ -9,7 +9,7 @@ from sqlalchemy import select, func
 from sqlalchemy.orm import selectinload
 
 from nms.database import get_db
-from nms.models.db_models import User, Order, Service, OrderStatus
+from nms.models.db_models import User, Order, Service, OrderStatus, Payment
 from nms.config import get_settings
 from nms.services.telegram_notifier import TelegramNotifier
 from nms.models.admin import (
@@ -120,12 +120,20 @@ async def list_orders(
         count_result = await db.execute(count_query)
         total = count_result.scalar_one()
 
-        # Get orders with pagination
-        result = await db.execute(query.offset(skip).limit(limit))
+        # Get orders with pagination (eagerly load payment)
+        result = await db.execute(
+            query.options(selectinload(Order.payment)).offset(skip).limit(limit)
+        )
         orders = result.scalars().all()
 
+        order_responses = []
+        for order in orders:
+            resp = AdminOrderResponse.model_validate(order)
+            resp.payment_status = order.payment.status if order.payment else None
+            order_responses.append(resp)
+
         return AdminOrderListResponse(
-            orders=[AdminOrderResponse.model_validate(order) for order in orders],
+            orders=order_responses,
             total=total
         )
     except Exception as e:
@@ -217,7 +225,7 @@ async def get_order(
     try:
         result = await db.execute(
             select(Order)
-            .options(selectinload(Order.user))
+            .options(selectinload(Order.user), selectinload(Order.payment))
             .where(Order.id == order_id)
         )
         order = result.scalar_one_or_none()
@@ -233,6 +241,7 @@ async def get_order(
             user_id=order.user_id,
             service_id=order.service_id,
             status=order.status,
+            payment_status=order.payment.status if order.payment else None,
             total_amount=order.total_amount,
             address_text=order.address_text,
             scheduled_at=order.scheduled_at,

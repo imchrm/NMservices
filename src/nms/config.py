@@ -45,6 +45,13 @@ class Settings(BaseSettings):
     # Telegram Bot (for sending notifications to users)
     telegram_bot_token: str = Field(default="", alias="TELEGRAM_BOT_TOKEN")
 
+    # Payment
+    payment_base_url: str = Field(
+        default="http://localhost:8000",
+        alias="PAYMENT_BASE_URL",
+        description="Base URL for payment checkout pages (used to build payment links)",
+    )
+
     # CORS (Cross-Origin Resource Sharing)
     # Type is str | list[str] so pydantic-settings won't force json.loads()
     # on plain string values like "*" or "https://example.com"
