@@ -17,6 +17,16 @@ class OrderStatus(str, PyEnum):
     CANCELLED = "cancelled"
 
 
+class PaymentStatus(str, PyEnum):
+    """Valid payment statuses."""
+
+    PENDING = "pending"
+    PROCESSING = "processing"
+    PAID = "paid"
+    FAILED = "failed"
+    CANCELLED = "cancelled"
+
+
 class User(Base):
     """User table model."""
 
@@ -86,6 +96,33 @@ class Order(Base):
     user = relationship("User", back_populates="orders")
     service = relationship("Service", back_populates="orders")
 
+    # Relationships
+    payment = relationship("Payment", back_populates="order", uselist=False)
+
     def __repr__(self) -> str:
         """String representation of Order."""
         return f"<Order(id={self.id}, user_id={self.user_id}, service_id={self.service_id}, status={self.status})>"
+
+
+class Payment(Base):
+    """Payment table model."""
+
+    __tablename__ = "payments"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    order_id = Column(Integer, ForeignKey("orders.id", ondelete="CASCADE"), nullable=False, unique=True, index=True)
+    amount = Column(DECIMAL(10, 2), nullable=False)
+    status: Mapped[str] = mapped_column(String(50), nullable=False, default=PaymentStatus.PENDING, index=True)
+    provider = Column(String(50), nullable=False, default="payme_demo")
+    token = Column(String(64), nullable=False, unique=True, index=True)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(
+        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
+    )
+
+    # Relationships
+    order = relationship("Order", back_populates="payment")
+
+    def __repr__(self) -> str:
+        """String representation of Payment."""
+        return f"<Payment(id={self.id}, order_id={self.order_id}, status={self.status}, provider={self.provider})>"

@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payme - Оплата заказа #{{ order_id }}</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f0f2f5;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+        }
+
+        .card {
+            background: #fff;
+            border-radius: 16px;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+            max-width: 400px;
+            width: 100%;
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #00CCCC 0%, #0099AA 100%);
+            padding: 24px;
+            text-align: center;
+            color: #fff;
+        }
+
+        .header .logo {
+            font-size: 28px;
+            font-weight: 700;
+            letter-spacing: 2px;
+            margin-bottom: 4px;
+        }
+
+        .header .subtitle {
+            font-size: 13px;
+            opacity: 0.85;
+        }
+
+        .demo-badge {
+            display: inline-block;
+            background: rgba(255,255,255,0.2);
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 11px;
+            margin-top: 8px;
+            letter-spacing: 1px;
+        }
+
+        .body { padding: 24px; }
+
+        .order-info {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 20px;
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+        }
+
+        .info-row:not(:last-child) {
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .info-label {
+            color: #6c757d;
+            font-size: 14px;
+        }
+
+        .info-value {
+            font-weight: 600;
+            font-size: 14px;
+            color: #212529;
+        }
+
+        .amount-total {
+            font-size: 28px;
+            font-weight: 700;
+            text-align: center;
+            color: #212529;
+            margin: 20px 0 4px;
+        }
+
+        .amount-currency {
+            text-align: center;
+            color: #6c757d;
+            font-size: 14px;
+            margin-bottom: 24px;
+        }
+
+        .card-input {
+            background: #f8f9fa;
+            border: 2px solid #e9ecef;
+            border-radius: 12px;
+            padding: 14px 16px;
+            font-size: 16px;
+            width: 100%;
+            text-align: center;
+            letter-spacing: 3px;
+            color: #495057;
+            margin-bottom: 20px;
+        }
+
+        .btn-pay {
+            width: 100%;
+            padding: 16px;
+            border: none;
+            border-radius: 12px;
+            font-size: 17px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: linear-gradient(135deg, #00CCCC 0%, #0099AA 100%);
+            color: #fff;
+        }
+
+        .btn-pay:hover { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(0,153,170,0.3); }
+        .btn-pay:active { transform: translateY(0); }
+        .btn-pay:disabled { opacity: 0.6; cursor: not-allowed; transform: none; box-shadow: none; }
+
+        .btn-fail {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #dc3545;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            background: transparent;
+            color: #dc3545;
+            margin-top: 10px;
+            transition: all 0.2s;
+        }
+
+        .btn-fail:hover { background: #dc3545; color: #fff; }
+        .btn-fail:disabled { opacity: 0.6; cursor: not-allowed; }
+
+        .footer {
+            text-align: center;
+            padding: 16px 24px 24px;
+            color: #adb5bd;
+            font-size: 12px;
+            line-height: 1.5;
+        }
+
+        /* Result states */
+        .result { display: none; text-align: center; padding: 32px 24px; }
+        .result.show { display: block; }
+        .result-icon { font-size: 64px; margin-bottom: 16px; }
+        .result-title { font-size: 20px; font-weight: 600; margin-bottom: 8px; }
+        .result-message { color: #6c757d; font-size: 14px; }
+
+        .form-section { }
+        .form-section.hidden { display: none; }
+
+        .spinner {
+            display: inline-block;
+            width: 20px; height: 20px;
+            border: 3px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 0.8s linear infinite;
+            vertical-align: middle;
+            margin-right: 8px;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <div class="header">
+            <div class="logo">Payme</div>
+            <div class="subtitle">Безопасная оплата</div>
+            <div class="demo-badge">ДЕМО-РЕЖИМ</div>
+        </div>
+
+        {% if already_paid %}
+        <!-- Already processed -->
+        <div class="result show">
+            <div class="result-icon">
+                {% if payment_status == 'paid' %}✅{% elif payment_status == 'failed' %}❌{% else %}⏳{% endif %}
+            </div>
+            <div class="result-title">
+                {% if payment_status == 'paid' %}Оплата уже проведена
+                {% elif payment_status == 'failed' %}Оплата не прошла
+                {% else %}Платёж обрабатывается{% endif %}
+            </div>
+            <div class="result-message">Заказ #{{ order_id }}</div>
+        </div>
+        {% else %}
+        <!-- Payment form -->
+        <div class="body form-section" id="formSection">
+            <div class="order-info">
+                <div class="info-row">
+                    <span class="info-label">Заказ</span>
+                    <span class="info-value">#{{ order_id }}</span>
+                </div>
+                {% if service_name %}
+                <div class="info-row">
+                    <span class="info-label">Услуга</span>
+                    <span class="info-value">{{ service_name }}</span>
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="amount-total">{{ amount_formatted }} сум</div>
+            <div class="amount-currency">Сумма к оплате</div>
+
+            <input class="card-input" type="text" value="8600 •••• •••• 1234" readonly>
+
+            <button class="btn-pay" id="btnPay" onclick="processPayment('paid')">
+                Оплатить {{ amount_formatted }} сум
+            </button>
+
+            <button class="btn-fail" id="btnFail" onclick="processPayment('failed')">
+                Имитировать ошибку оплаты
+            </button>
+        </div>
+
+        <!-- Success result -->
+        <div class="result" id="resultSuccess">
+            <div class="result-icon">✅</div>
+            <div class="result-title">Оплата прошла успешно!</div>
+            <div class="result-message">Заказ #{{ order_id }} оплачен.<br>Можете закрыть эту страницу.</div>
+        </div>
+
+        <!-- Failure result -->
+        <div class="result" id="resultFailure">
+            <div class="result-icon">❌</div>
+            <div class="result-title">Оплата не прошла</div>
+            <div class="result-message">Заказ #{{ order_id }}.<br>Попробуйте снова или выберите другой способ оплаты.</div>
+        </div>
+
+        <!-- Error result -->
+        <div class="result" id="resultError">
+            <div class="result-icon">⚠️</div>
+            <div class="result-title">Ошибка соединения</div>
+            <div class="result-message" id="errorMessage"></div>
+        </div>
+        {% endif %}
+
+        <div class="footer">
+            Это демонстрационная страница оплаты.<br>
+            Реальная оплата не производится.
+        </div>
+    </div>
+
+    {% if not already_paid %}
+    <script>
+        async function processPayment(paymentStatus) {
+            const btnPay = document.getElementById('btnPay');
+            const btnFail = document.getElementById('btnFail');
+
+            btnPay.disabled = true;
+            btnFail.disabled = true;
+            btnPay.innerHTML = '<span class="spinner"></span> Обработка...';
+
+            try {
+                const response = await fetch('{{ webhook_url }}', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        order_id: {{ order_id }},
+                        token: '{{ token }}',
+                        amount: {{ amount }},
+                        status: paymentStatus
+                    })
+                });
+
+                const data = await response.json();
+
+                document.getElementById('formSection').classList.add('hidden');
+
+                if (response.ok && paymentStatus === 'paid') {
+                    document.getElementById('resultSuccess').classList.add('show');
+                } else if (response.ok && paymentStatus === 'failed') {
+                    document.getElementById('resultFailure').classList.add('show');
+                } else {
+                    document.getElementById('errorMessage').textContent =
+                        data.detail || 'Неизвестная ошибка';
+                    document.getElementById('resultError').classList.add('show');
+                }
+            } catch (err) {
+                document.getElementById('formSection').classList.add('hidden');
+                document.getElementById('errorMessage').textContent = err.message;
+                document.getElementById('resultError').classList.add('show');
+            }
+        }
+    </script>
+    {% endif %}
+</body>
+</html>

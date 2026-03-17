@@ -25,11 +25,10 @@ class OrderService:
             True if payment successful
 
         Note:
-            Currently a stub implementation. In production, this would
-            integrate with a payment gateway (e.g., Payme, Click, Uzcard).
+            Legacy stub. Real payment processing is now handled by
+            PaymentService via /payment/initiate and /webhooks/payme endpoints.
         """
         log.info(f"[PAYMENT-STUB] Processing payment of {amount} sum...")
-        # TODO: Integrate with real payment gateway
         return True
 
     @staticmethod

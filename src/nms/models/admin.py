@@ -59,6 +59,7 @@ class AdminOrderResponse(BaseModel):
     user_id: int
     service_id: Optional[int] = None
     status: str
+    payment_status: Optional[str] = None
     total_amount: Optional[Decimal] = None
     address_text: Optional[str] = None
     scheduled_at: Optional[datetime] = None
@@ -76,6 +77,7 @@ class AdminOrderWithUserResponse(BaseModel):
     user_id: int
     service_id: Optional[int] = None
     status: str
+    payment_status: Optional[str] = None
     total_amount: Optional[Decimal] = None
     address_text: Optional[str] = None
     scheduled_at: Optional[datetime] = None
