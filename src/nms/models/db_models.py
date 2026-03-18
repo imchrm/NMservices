@@ -96,8 +96,7 @@ class Order(Base):
     user = relationship("User", back_populates="orders")
     service = relationship("Service", back_populates="orders")
 
-    # Relationships
-    payment = relationship("Payment", back_populates="order", uselist=False)
+    payment = relationship("Payment", back_populates="order", uselist=False, cascade="all, delete-orphan")
 
     def __repr__(self) -> str:
         """String representation of Order."""
