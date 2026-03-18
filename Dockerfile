@@ -17,6 +17,8 @@ COPY src/ ./src/
 
 ENV ENVIRONMENT=production
 
+COPY scripts/ ./scripts/
+
 EXPOSE 8000
 
 CMD ["uvicorn", "nms.main:app", "--host", "0.0.0.0", "--port", "8000", "--app-dir", "src"]
