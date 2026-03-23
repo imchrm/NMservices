@@ -143,6 +143,7 @@ async def checkout_page(
                 "payment_status": already_status,
                 "service_name": "",
                 "webhook_url": "",
+                "bot_username": settings.telegram_bot_username,
             },
         )
 
@@ -173,6 +174,7 @@ async def checkout_page(
             "payment_status": payment.status,
             "service_name": service_name,
             "webhook_url": webhook_url,
+            "bot_username": settings.telegram_bot_username,
         },
     )
 

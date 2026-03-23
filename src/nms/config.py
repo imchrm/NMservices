@@ -44,6 +44,11 @@ class Settings(BaseSettings):
 
     # Telegram Bot (for sending notifications to users)
     telegram_bot_token: str = Field(default="", alias="TELEGRAM_BOT_TOKEN")
+    telegram_bot_username: str = Field(
+        default="",
+        alias="TELEGRAM_BOT_USERNAME",
+        description="Bot username (without @) for building deeplinks on checkout page",
+    )
 
     # Payment
     payment_base_url: str = Field(
