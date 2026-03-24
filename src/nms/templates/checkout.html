@@ -217,11 +217,9 @@
                 {% else %}Платёж обрабатывается{% endif %}
             </div>
             <div class="result-message">Заказ #{{ order_id }}</div>
-            {% if bot_username %}
-            <a class="btn-bot" href="https://t.me/{{ bot_username }}?start=paid_{{ order_id }}">
+            <button class="btn-bot" onclick="closeWebView()">
                 Вернуться в бот
-            </a>
-            {% endif %}
+            </button>
         </div>
         {% else %}
         <!-- Payment form -->
@@ -258,11 +256,9 @@
             <div class="result-icon">✅</div>
             <div class="result-title">Оплата прошла успешно!</div>
             <div class="result-message">Заказ #{{ order_id }} оплачен.</div>
-            {% if bot_username %}
-            <a class="btn-bot" href="https://t.me/{{ bot_username }}?start=paid_{{ order_id }}">
+            <button class="btn-bot" onclick="closeWebView()">
                 Вернуться в бот
-            </a>
-            {% endif %}
+            </button>
         </div>
 
         <!-- Failure result -->
@@ -285,6 +281,26 @@
             Реальная оплата не производится.
         </div>
     </div>
+
+    <script>
+        function closeWebView() {
+            // Try Telegram WebApp API first
+            if (window.Telegram && window.Telegram.WebApp) {
+                window.Telegram.WebApp.close();
+                return;
+            }
+            // Fallback: try closing the window
+            window.close();
+            // If window.close() didn't work, show hint
+            setTimeout(function() {
+                document.querySelectorAll('.btn-bot').forEach(function(btn) {
+                    btn.textContent = 'Закройте эту страницу ✕';
+                    btn.disabled = true;
+                    btn.style.opacity = '0.7';
+                });
+            }, 300);
+        }
+    </script>
 
     {% if not already_paid %}
     <script>
