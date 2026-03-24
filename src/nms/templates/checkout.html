@@ -161,7 +161,24 @@
         .result.show { display: block; }
         .result-icon { font-size: 64px; margin-bottom: 16px; }
         .result-title { font-size: 20px; font-weight: 600; margin-bottom: 8px; }
-        .result-message { color: #6c757d; font-size: 14px; }
+        .result-message { color: #6c757d; font-size: 14px; margin-bottom: 16px; }
+
+        .btn-bot {
+            display: inline-block;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 12px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            color: #fff;
+            background: linear-gradient(135deg, #0088cc 0%, #0066aa 100%);
+            transition: all 0.2s;
+            margin-top: 8px;
+        }
+
+        .btn-bot:hover { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(0,136,204,0.3); }
 
         .form-section { }
         .form-section.hidden { display: none; }
@@ -200,6 +217,11 @@
                 {% else %}Платёж обрабатывается{% endif %}
             </div>
             <div class="result-message">Заказ #{{ order_id }}</div>
+            {% if bot_username %}
+            <a class="btn-bot" href="https://t.me/{{ bot_username }}?start=paid_{{ order_id }}">
+                Вернуться в бот
+            </a>
+            {% endif %}
         </div>
         {% else %}
         <!-- Payment form -->
@@ -235,7 +257,12 @@
         <div class="result" id="resultSuccess">
             <div class="result-icon">✅</div>
             <div class="result-title">Оплата прошла успешно!</div>
-            <div class="result-message">Заказ #{{ order_id }} оплачен.<br>Можете закрыть эту страницу.</div>
+            <div class="result-message">Заказ #{{ order_id }} оплачен.</div>
+            {% if bot_username %}
+            <a class="btn-bot" href="https://t.me/{{ bot_username }}?start=paid_{{ order_id }}">
+                Вернуться в бот
+            </a>
+            {% endif %}
         </div>
 
         <!-- Failure result -->
