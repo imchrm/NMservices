@@ -53,6 +53,18 @@ static_dir = Path(__file__).resolve().parent / "static"
 if static_dir.exists():
     app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
 
+# Mount virtual tour (Marzipano).
+# Files are expected at src/nms/static/virtualtour360/<tour-name>/index.html
+# and are mounted into the container via a Docker volume (see docker-compose.vps.yml).
+# Access: http://<host>:<port>/virtualtour360/<tour-name>/
+tour_dir = Path(__file__).resolve().parent / "static" / "virtualtour360"
+if tour_dir.exists():
+    app.mount(
+        "/virtualtour360",
+        StaticFiles(directory=str(tour_dir), html=True),
+        name="virtualtour360",
+    )
+
 # Include routers
 app.include_router(users_router)
 app.include_router(orders_router)
